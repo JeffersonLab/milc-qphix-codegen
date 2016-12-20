@@ -2123,7 +2123,7 @@ void update_mg_body(InstVector& ivector, bool compress12, bool isface=false)
   string Herm2("Herm2");
   declare_HermTl(ivector, FVec(Herm1));
   declare_HermTl(ivector, FVec(Herm2));
-  declare_Gauge(ivector, tmpMtr);
+  declare_Gauge(ivector, FVec(tmpMtr));
   string accumulate("accumulate");
   forLoopInc(ivector, "dir1", "0", "8");
   {
@@ -2210,7 +2210,7 @@ void gf_pack_face(InstVector& ivector)
     loadGauge7WayDir(ivector, "tmpMtr7w", "giBase", dir, mask);
     PackGauge7WayDir(ivector, "tmpMtr7w", l_out, r_out, dir);
 }
-
+/*
 void gauge_pack_face(InstVector& ivector, int dir)
 {
     std::string r_out("rBuf");
@@ -2218,7 +2218,7 @@ void gauge_pack_face(InstVector& ivector, int dir)
     loadGaugeDir(ivector, tmpMtrFVec, "giBase", dir, true, mask);
     PackGaugeDir(ivector, tmpMtrFVec, r_out, dir, true);
 }
-
+*/
 void gauge_unpack_face_pack_momentum(InstVector& ivector, /*int dir,*/ bool compress12)
 {
     std::string l_in("lBuf");
@@ -2294,6 +2294,33 @@ void gforce_unpack_face(InstVector& ivector)
   endScope(ivector);  
 }
 
+void gauge_pack_face(InstVector& ivector)
+{
+    std::string dir("dir");
+    std::string r_out("rBuf");
+    std::string giBase("giBase");
+    declare_Gauge12(ivector, FVec(tmpMtr));
+    declarePACKMASK(ivector);
+    loadGaugeDir(ivector, tmpMtr, giBase, dir, true, mask);
+    PackGaugeDir(ivector, tmpMtr, r_out, dir, true);
+}
+
+void gauge_unpack_face(InstVector& ivector, bool compress12)
+{
+    std::string dir("dir");
+    std::string r_out("rBuf");
+    std::string goBase("goBase");
+    if(compress12)
+	declare_Gauge12(ivector, FVec(tmpMtr));
+    else
+	declare_Gauge(ivector, FVec(tmpMtr));
+    declarePACKMASK(ivector);
+    loadGaugeDir(ivector, tmpMtr, goBase, dir, true, mask);
+    UnpackGaugeDir(ivector, tmpMtr, r_out, dir, true);
+    decompressGauge(ivector, tmpMtr, !compress12, mask);
+    storeGaugeDir(ivector, goBase, tmpMtr, dir, mask, compress12, 1);
+}
+
 void momentum_pack_face(InstVector& ivector)
 {
     std::string r_out("rBuf");
@@ -2309,11 +2336,13 @@ void momentum_unpack_face(InstVector& ivector)
 {
     std::string r_out("rBuf");
     std::string dir("dir");
+    std::string hoBase("hoBase");
     std::string Herm("Herm");
     declare_HermTl(ivector, FVec(Herm));
     declarePACKMASK(ivector);
+    loadHermitDir(ivector, Herm, hoBase, dir, mask);
     UnpackHermitDir(ivector, Herm, r_out, dir);
-    storeHermitDir(ivector, "hoBase", Herm, dir, "PACKMASK[("+dir+")&1][("+dir+")>>1]");
+    storeHermitDir(ivector, hoBase, Herm, dir, mask, 1);
 }
 
 void generateGFImpL2Prefetches(InstVector& ivector, bool compress12)
@@ -2406,18 +2435,15 @@ int main(void)
     	dumpIVector(ivector,filename.str());
     	filename.str("");
     	filename.clear();
-    for(int dir=0; dir<8; ++dir)
-    {
-	filename << "./"<<ARCH_NAME<<"/" << "gauge_pack_to_" << bf[dir&1].str() << "_" << Dir[dir/2] << "_" << GaugeTypeName << "_v"<< VECLEN <<"_s"<<"_12";
+	filename << "./"<<ARCH_NAME<<"/" << "gauge_pack_face_" << GaugeTypeName << "_v"<< VECLEN <<"_s"<<"_12";
 	cout << "GENERATING " << filename.str() << endl;
         l2prefs.resize(0);
         ivector.resize(0);
-	gauge_pack_face(ivector, dir);
+	gauge_pack_face(ivector);
 	mergeIvectorWithL2Prefetches(ivector, l2prefs);
         dumpIVector(ivector,filename.str());
         filename.str("");
         filename.clear();
-    }
     /* Unpack gauge and pack gauge force */
     for(int num_components=12; num_components <=18; num_components+=6) {
         	compress12 = ( num_components==12 );
@@ -2426,11 +2452,21 @@ int main(void)
 		cout << "GENERATING " << filename.str() << endl;
 		l2prefs.resize(0);
 		ivector.resize(0);
-		gauge_unpack_face_pack_momentum(ivector, /*dir,*/ compress12);
+		gauge_unpack_face_pack_momentum(ivector, compress12);
 		mergeIvectorWithL2Prefetches(ivector, l2prefs);
 		dumpIVector(ivector,filename.str());
 		filename.str("");
 		filename.clear();
+		/* Unpack gauge field one direction */
+		filename << "./"<<ARCH_NAME<<"/" << "gauge_unpack_face_" << GaugeTypeName << "_v"<< VECLEN <<"_s"<<"_" << num_components;
+		cout << "GENERATING " << filename.str() << endl;
+                l2prefs.resize(0);
+                ivector.resize(0);
+		gauge_unpack_face(ivector, compress12);
+		mergeIvectorWithL2Prefetches(ivector, l2prefs);
+                dumpIVector(ivector,filename.str());
+                filename.str("");
+                filename.clear();
     }
     /* Unpack & update gauge momentum */
     filename << "./"<<ARCH_NAME<<"/" << "gforce_unpack_face_" << HermitTypeName << "_v"<< VECLEN <<"_s";

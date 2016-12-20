@@ -437,6 +437,22 @@ void PackGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& rB
     }
 }
 
+void PackGaugeDir(InstVector& ivector, string ret, const string& rBase, string dir, bool compress12)
+{
+    if(compress12)
+        forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<2", "++r");
+    else
+	forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<3", "++r");
+    {
+            forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+            {
+                packXYZTFVec(ivector, ret+"[r][c]", new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
+            }
+            endScope(ivector);
+    }
+    endScope(ivector); 
+}
+
 void PackGauge7WayDir(InstVector& ivector, const FVec ret[7][2][3][2], /*const string& lBase,*/ const string& rBase, int dir)
 {
     int rpackoffset = 0;
@@ -496,22 +512,6 @@ void UnpackGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& 
 void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& lBase, const string& rBase, const string& dir, bool compress12)
 {
     int lpackoffset = 0, rpackoffset = 0;
-/*
-    if(compress12) forLoopStatement(ivector, "int r=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "r<2", "++r");
-    else forLoopStatement(ivector, "int r=0, lpackoffset = 0, rpackoffset = 0", "r<3", "++r");
-    forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
-    {
-	int rsz = unpackXYZTFVec(ivector, ret+"[r][c]", new AddressImm(new GenericAddress(lBase, GaugeType), lpackoffset),
-		new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir);
-	if(rsz==VECLEN) initInt(ivector, "rsz", "VECLEN");
-	else initInt(ivector, "rsz", "2*VECLEN");
-	if(rsz==VECLEN) initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
-	endScope(ivector);
-    }
-    endScope(ivector);
-    endScope(ivector);
-*/
-    //for(int r=0; r<3-compress12; ++r) for(int c=0; c<3; ++c) 
     if(compress12) forLoopStatement(ivector, "int r=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "r<2", "++r");
     else forLoopStatement(ivector, "int r=0, lpackoffset = 0, rpackoffset = 0", "r<3", "++r");
     forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
@@ -524,6 +524,18 @@ void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& lBase,
 		initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
 	}
 	endScope(ivector);
+    }
+    endScope(ivector);
+    endScope(ivector);
+}
+
+void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& rBase, const string& dir, bool compress12)
+{
+    if(compress12) forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<2", "++r");
+    else forLoopStatement(ivector, "int r=0, rpackoffset = 0", "r<3", "++r");
+    forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+    {
+	unpackXYZTFVec(ivector, ret+"[r][c]", new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
     }
     endScope(ivector);
     endScope(ivector);

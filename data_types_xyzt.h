@@ -103,6 +103,7 @@ void StreamFullKS(InstVector& ivector, const FVec ret[3][2], const string& base)
 void PackKSSpinor(InstVector& ivector, const FVec ret[3][2], const string& lBase, const string& rBase, int dir);
 void UnpackKSSpinor(InstVector& ivector, const FVec ret[3][2], const string& lBase, const string& rBase, int dir);
 void PackGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& rBase, int dir, bool compress12);
+void PackGaugeDir(InstVector& ivector, string ret, const string& rBase, string dir, bool compress12);
 void PackGauge7WayDir(InstVector& ivector, const FVec ret[7][2][3][2], /*const string& lBase,*/ const string& rBase, int dir);
 void PackGauge7WayDir(InstVector& ivector, const FVec ret[7][2][3][2], const string& lBase, const string& rBase, int dir);
 void PackGauge7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir);
@@ -110,6 +111,7 @@ void PackGauge7WayDir(InstVector& ivector, string ret, const string& lBase, cons
 //void PackGauge7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir, bool compress12);
 void UnpackGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& lBase, const string& rBase, int dir, bool compress12);
 void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& lBase, const string& rBase, const string& dir, bool compress12);
+void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& rBase, const string& dir, bool compress12);
 void UnpackGauge7WayDir(InstVector& ivector, const FVec *ret[3][2], /*const string& lBase,*/ const string& rBase, int dir, bool compress12);
 void UnpackGauge7WayDir(InstVector& ivector, const FVec *ret[3][2], const string& lBase, const string& rBase, int dir, bool compress12);
 void UnpackGauge7WayDir(InstVector& ivector, const string ret, const string& lBase, const string& rBase, string dir, bool compress12);
