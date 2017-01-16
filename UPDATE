@@ -26,7 +26,7 @@
 # 1. data_types_xyzt.cc - added SU(3) gauge and Hermitian matrix load/store/(un)pack, 
 #                         e.g., readFVecHermit, readFVecHermit(string version), 
 #                               PackGauge7WayDir, PackGauge7WayDir(string version), etc.
-# 2. inst_(s,d)p_vec(2,4,8).cc - added intrinsic generators for new algebras and memory access, 
+# 2. inst_{s,d}p_vec{4,8,16}.cc - added intrinsic generators for new algebras and memory access, 
 #                                TODO for AVX(2), SSE
 #
 # Modified headers:
