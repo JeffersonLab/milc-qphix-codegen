@@ -20,8 +20,8 @@ Available targets are:
 
  mic - Xeon Phi
  avx - Regular AVX 
- avx2 - AVX2 (e.g. for Haswell) -- tested for KS CG
- avx512 - AVX512 (e.g. for KNL) -- tested for KS CG and GF
+ avx2 - AVX2 (e.g. for Haswell) -- tested for KS CG (dslash branch)
+ avx512 - AVX512 (e.g. for KNL) -- tested for KS CG and GF (gauge_force branch)
  sse  - For SSE -- untested
  scalar -- C, scalar code (SOALEN=1)
 
