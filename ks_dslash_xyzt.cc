@@ -15,16 +15,6 @@ typedef struct {
     void (*CVecFuncTop2)(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, FVec &beta_vec, string &mask);
 } recons_ops;
 
-FVec tmpMtr3[3][3][2] = { { {FVec("tmpMtr3_00RE"), FVec("tmpMtr3_00IM")},
-                                  {FVec("tmpMtr3_01RE"), FVec("tmpMtr3_01IM")},
-                                  {FVec("tmpMtr3_02RE"), FVec("tmpMtr3_02IM")} },
-                                { {FVec("tmpMtr3_10RE"), FVec("tmpMtr3_10IM")},
-                                  {FVec("tmpMtr3_11RE"), FVec("tmpMtr3_11IM")},
-                                  {FVec("tmpMtr3_12RE"), FVec("tmpMtr3_12IM")} },
-                                { {FVec("tmpMtr3_20RE"), FVec("tmpMtr3_20IM")},
-                                  {FVec("tmpMtr3_21RE"), FVec("tmpMtr3_21IM")},
-                                  {FVec("tmpMtr3_22RE"), FVec("tmpMtr3_22IM")} } };
-string tmpMtr3str("tmpMtr3str");
 string dirname[2] = {"back", "forw"};
 string dimchar[4] = {"X", "Y", "Z", "T"};
 // Defines which dimensions are involved in SIMD blocking
@@ -250,7 +240,7 @@ void reconstructGaugeSign(InstVector& ivector, FVec u_mat[3][3][2], int dim, int
     }
 }
 
-static void loadGaugeDir(InstVector& ivector, string gBase, int dir, bool compress12) {
+void loadGaugeDir(InstVector& ivector, string gBase, int dir, bool compress12) {
     string mask;
 
     //PrefetchL1FullGaugeDirIn(ivector, gBase, dir, compress12);
@@ -369,7 +359,7 @@ void path_product(InstVector& ivector, string gBase, string gOffs, string nBase,
     if(compress12) reconstructGaugeSign(ivector, A, dir/2, 2, compress12);
 
     // B = U+*A
-    adjMatMultMat(ivector, B, U, A, true, "");
+    adjMatMultMat(ivector, B, U, A, "");
 
     // store result vector
     if(!isFace)
@@ -581,7 +571,6 @@ void load_longlinks_face_unpack_from_dim(InstVector& ivector, bool compress12, i
 }
 #endif
 
-/*
 string getTypeName(size_t s)
 {
     if(s == 2) return "half";
@@ -589,7 +578,6 @@ string getTypeName(size_t s)
     else if(s == 8) return "double";
     else return "Unknown";
 }
-*/
 
 int main(void)
 {

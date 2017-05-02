@@ -30,11 +30,6 @@ string InitFVec::serialize() const
 #endif
 }
 
-string Declare_MM_PERM::serialize() const
-{
-  return "_MM_PERM_ENUM MM_PERM[8] = { (_MM_PERM_ENUM)0xB1, (_MM_PERM_ENUM)0xB1, (_MM_PERM_ENUM)0x4E, (_MM_PERM_ENUM)0x4E, (_MM_PERM_ENUM)0x01, (_MM_PERM_ENUM)0x01, (_MM_PERM_ENUM)0x00, (_MM_PERM_ENUM)0x00 };";
-}
-
 string DeclareMask::serialize() const
 {
     ostringstream outbuf;
@@ -426,28 +421,6 @@ private:
     const FVec ret;
     const FVec a;
     int dir;
-};
-
-class PermuteXYZTFVecDir : public Instruction
-{
-public:
-    PermuteXYZTFVecDir(const FVec& ret_, const FVec& a_, const string& dir_) : ret(ret_), a(a_), dir(dir_) {}
-    string serialize() const
-    {
-        ostringstream stream;
-                stream << "if(((" << dir << ")>>1) == 0) " << ret.getName() << " = _mm256_permute_ps(" << a.getName() << ", (_MM_PERM_ENUM)0xB1);" << endl
-			<< "else if(((" << dir << ")>>1) == 1) " << ret.getName() << " = _mm256_permute_ps(" << a.getName() << ", (_MM_PERM_ENUM)0x4E);" << endl
-                        << "else if(((" << dir << ")>>1) == 2) " << ret.getName() << " = _mm256_permute2f128_ps(" << a.getName() << ", "  << a.getName() << ", 0x01);" ;
-        return stream.str();
-    }
-    int numArithmeticInst() const
-    {
-        return 0;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const string dir;
 };
 
 class PackXYZTFVec : public Instruction
@@ -1009,21 +982,6 @@ void transpose(InstVector& ivector, const FVec r[], const FVec f[], int soalen)
 void permuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, int dir)
 {
 	ivector.push_back(new PermuteXYZTFVec(r, f, dir));
-}
-
-void permuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, string dir)
-{
-        ivector.push_back(new PermuteXYZTFVecDir(r, f, dir));
-}
-
-void aPermuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, int dir)
-{
-        ivector.push_back(new PermuteXYZTFVec(r, f, dir));
-}
-
-void aPermuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, string dir)
-{
-        ivector.push_back(new PermuteXYZTFVecDir(r, f, dir));
 }
 
 int packXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, const Address*rAddr, int dir) 
