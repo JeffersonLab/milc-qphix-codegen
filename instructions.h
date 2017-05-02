@@ -5,16 +5,6 @@
 #include <sstream>
 #include <vector>
 
-#include <fstream>
-#include <iostream>
-#include <typeinfo>
-#include <map>
-
-#include <cstdio>
-#include <cstdlib>
-
-using namespace std;
-
 #ifndef PRECISION
 #define PRECISION 1
 #endif
@@ -25,7 +15,6 @@ using namespace std;
 
 #define RE 0
 #define IM 1
-#define MAXARRAYDIM 10
 
 class FVec
 {
@@ -74,10 +63,6 @@ public:
     {
         return 0;
     }
-    virtual int numLoops() const
-    {
-	return 0;
-    }
 };
 
 typedef vector<Instruction *> InstVector;
@@ -115,6 +100,10 @@ public:
     {
         return "} else {";
     }
+    int numScopes() const
+    {
+        return 1;
+    }
 };
 
 class ElseIfStatement : public Instruction {
@@ -124,6 +113,9 @@ public:
         return "} else if ( "+condition+" ) { ";
     }
     int numIfs() const {
+        return 1;
+    }
+    int numScopes() const {
         return 1;
     }
 private:
@@ -142,68 +134,8 @@ public:
     {
         return 1;
     }
-    int numScopes() const
-    {
-	return 1;
-    }
 private:
     const string condition;
-};
-
-class ForLoopInc : public Instruction
-{
-public:
-    ForLoopInc(const string& index_, const string& begin_, const string& end_, const string& inc_) : index(index_), begin(begin_), end(end_), inc(inc_) {}
-    string serialize() const
-    {
-	return " for ( int "+index+"="+begin+"; "+index+"<"+end+"; "+index+"+="+inc+" ) { ";
-    }
-    int numLoops() const
-    {
-	return 1;
-    }
-private:
-    const string index;
-    const string begin;
-    const string end;
-    const string inc;
-};
-
-class ForLoopDec : public Instruction
-{
-public:
-    ForLoopDec(const string& index_, const string& begin_, const string& end_, const string& dec_) : index(index_), begin(begin_), end(end_), dec(dec_) {}
-    string serialize() const
-    {
-        return " for ( int "+index+"="+begin+"; "+index+">"+end+"; "+index+"-="+dec+" ) { ";
-    }
-    int numLoops() const
-    {
-        return 1;
-    }
-private:
-    const string index;
-    const string begin;
-    const string end;
-    const string dec;
-};
-
-class ForLoopStatement : public Instruction
-{
-public:
-    ForLoopStatement(const string& begin_, const string& end_, const string& inc_) : begin(begin_), end(end_), inc(inc_) {}
-    string serialize() const
-    {
-	return " for ( "+begin+"; "+end+"; "+inc+ ") { ";
-    }
-    int numLoops() const
-    {
-        return 1;
-    }
-private:
-    const string begin;
-    const string end;
-    const string inc;
 };
 
 class InlineCode : public Instruction
@@ -264,141 +196,11 @@ private:
     const FVec v;
 };
 
-class DeclareFVecArray : public Instruction
-{
-public:
-    DeclareFVecArray( const FVec &v_, const int dim_, const int *len_ ) : v(v_), dim(dim_) { 
-	for(int i=0; i<dim; ++i) len[i] = len_[i]; 
-    }
-    string serialize() const
-    {
-    	//string tmp = v.getType()+" "+v.getName();
-    	ostringstream tmp;
-	tmp << v.getType() << " " << v.getName();
-	for(int i=0; i<dim; ++i) {
-	    //std::ostringstream itos;
-	    //itos << len[i];
-	    //tmp += "["+itos.str()+"]";
-	    tmp << "[" << len[i] << "]";
-	}
-	tmp << ";";
-    	return tmp.str();
-    };
-    int numDeclarations() const
-    {
-        return 1;
-    }
-
-private:
-    const FVec v;
-    const int dim;
-    int len[MAXARRAYDIM];
-};
-
-/*
-class Declare_MM_PERM : public Instruction
-{
-public:
-    Declare_MM_PERM() {}
-    string serialize() const;
-    int numDeclarations() const
-    {
-        return 1;
-    }
-};
-*/
-
-class DeclarePACKMASK : public Instruction
-{
-public:
-    DeclarePACKMASK() {}
-    string serialize() const;
-    int numDeclarations() const
-    {
-        return 1;
-    }
-};
-
-/*
-class Declare_FVec : public Instruction
-{
-public:
-    Declare_FVec(string &vect_) : vect(vect_) {}
-    string serialize() const;
-    int numDeclarations() const
-    {
-        return 1;
-    }
-private:
-    const string vect;
-};
-*/
-#if 0
-class DeclareFVecArray2D : public Instruction
-{
-public:
-    DeclareFVecArray( const FVec &v_, const int len1_, const int len2_ ) : v(v_), len1(len1_), len2(len2_) { }
-    string serialize() const;
-    int numDeclarations() const
-    {
-        return 1;
-    }
-
-private:
-    const FVec v;
-    const int len1;
-    const int len2;
-};
-
-class DeclareFVecArray3D : public Instruction
-{
-public:
-    DeclareFVecArray( const FVec &v_, const int len1_, const int len2_, const int len3_ ) : v(v_), len1(len1_), len2(len2_), len3(len3_) { }   
-    string serialize() const;
-    int numDeclarations() const
-    {
-        return 1;
-    }
-
-private:
-    const FVec v;
-    const int len1;
-    const int len2;
-    const int len3;
-};
-#endif
-
 class DeclareMask : public Instruction
 {
 public:
     DeclareMask(string name_, string value_="") : name(name_), value(value_) { }
     string serialize() const;
-    int numDeclarations() const
-    {
-        return (1);
-    }
-private:
-    const string name;
-    const string value;
-};
-
-class DeclareInt : public Instruction
-{
-public:
-    DeclareInt(string name_, string value_="") : name(name_), value(value_) { }
-    string serialize() const
-    {
-    	ostringstream outbuf;
-
-    	if(value.empty()) {
-            outbuf << "int " << name << ";" << endl;
-    	}
-    	else {
-            outbuf << "int " << name << " = " << value << ";" << endl;
-    	}
-
-    	return outbuf.str();
-    }
     int numDeclarations() const
     {
         return (1);
@@ -482,26 +284,6 @@ private:
     const FVec v;
     const Address* a;
     int isStreaming;
-};
-
-class StoreFVecMask : public MemRefInstruction
-{
-public:
-    StoreFVecMask( const FVec& v_, const Address* a_, string mask_) : v(v_), a(a_), mask(mask_) {}
-    string serialize() const;
-    const Address* getAddress() const
-    {
-        return a;
-    }
-    MemRefType getType() const
-    {
-        return STORE_VEC;
-    }
-
-private:
-    const FVec v;
-    const Address* a;
-    const string mask;
 };
 
 class GatherFVec : public MemRefInstruction
@@ -693,7 +475,7 @@ private:
 class Mul : public Instruction
 {
 public:
-    Mul( const FVec& ret_, const FVec& a_, const FVec& b_, const string& mask_) : ret(ret_), a(a_), b(b_), mask(mask_) {};
+    Mul( const FVec& ret_, const FVec& a_, const FVec& b_, const string& mask_) : ret(ret_), a(a_), b(b_), mask(mask_) {}
     string serialize() const;
     int numArithmeticInst() const
     {
@@ -703,38 +485,6 @@ private:
     const FVec ret;
     const FVec a;
     const FVec b;
-    const string mask;
-};
-
-class SMul : public Instruction
-{
-public:
-    SMul( const FVec& ret_, const FVec& a_, const string &scalar_, const string& mask_) : ret(ret_), a(a_), scalar(scalar_), mask(mask_) {};
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const string scalar;
-    const string mask;
-};
-
-class NSMul : public Instruction
-{
-public:
-    NSMul( const FVec& ret_, const FVec& a_, const string &scalar_, const string& mask_) : ret(ret_), a(a_), scalar(scalar_), mask(mask_) {};
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const string scalar;
     const string mask;
 };
 
@@ -755,40 +505,6 @@ private:
     const string mask;
 };
 
-class FSnMAdd : public Instruction
-{
-public:
-    FSnMAdd( const FVec& ret_, const FVec& a_, const string& b_, const FVec& c_, const string& mask_) : ret(ret_), a(a_), b(b_), c(c_), mask(mask_) {}
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const string b;
-    const FVec c;
-    const string mask;
-};
-
-class FMSnMAdd : public Instruction
-{
-public:
-    FMSnMAdd( const FVec& ret_, const FVec& a_, const FVec& b_, const string& c_, const FVec& d_, const string& mask_) : ret(ret_), a(a_), b(b_), c(c_), d(d_), mask(mask_) {}
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const FVec b;
-    const string c;
-    const FVec d;
-    const string mask;
-};
 class FMAdd : public Instruction
 {
 public:
@@ -806,61 +522,10 @@ private:
     const string mask;
 };
 
-class FSMAdd : public Instruction
-{
-public:
-    FSMAdd( const FVec& ret_, const FVec& a_, const string& b_, const FVec& c_, const string& mask_) : ret(ret_), a(a_), b(b_), c(c_), mask(mask_) {}
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const string b;
-    const FVec c;
-    const string mask;
-};
-
-class FMSMAdd : public Instruction
-{
-public:
-    FMSMAdd( const FVec& ret_, const FVec& a_, const FVec& b_, const string& c_, const FVec& d_, const string& mask_) : ret(ret_), a(a_), b(b_), c(c_), d(d_), mask(mask_) {}
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const FVec b;
-    const string c;
-    const FVec d;
-    const string mask;
-};
-
 class Add : public Instruction
 {
 public:
     Add( const FVec& ret_, const FVec& a_, const FVec& b_, const string& mask_) : ret(ret_), a(a_), b(b_), mask(mask_) {}
-    string serialize() const;
-    int numArithmeticInst() const
-    {
-        return 1;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const FVec b;
-    const string mask;
-};
-
-class NAdd : public Instruction
-{
-public:
-    NAdd( const FVec& ret_, const FVec& a_, const FVec& b_, const string& mask_) : ret(ret_), a(a_), b(b_), mask(mask_) {}
     string serialize() const;
     int numArithmeticInst() const
     {
@@ -960,18 +625,9 @@ void gatherPrefetchL2(InstVector& ivector, GatherAddress *a, int type = 0);
 void transpose(InstVector& ivector, const FVec r[], const FVec f[], int soalen);
 
 void permuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, int dir);
-void aPermuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, int dir);
-void permuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, string dir);
-void aPermuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, string dir);
 
 int packXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, const Address*rAddr, int dir);
-void packXYZTFVec(InstVector& ivector, const string& r, const Address*lAddr, const Address*rAddr, string dir, string srz);
-int packXYZTFVec(InstVector& ivector, const FVec r[2], const Address*rAddr, int dir);
-void packXYZTFVec(InstVector& ivector, const string& r, const Address*rAddr, string dir, string srz);
 int unpackXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, const Address*rAddr, int dir);
-void unpackXYZTFVec(InstVector& ivector, const string &r, const Address*lAddr, const Address*rAddr, string dir, string srz);
-int unpackXYZTFVec(InstVector& ivector, const FVec r[2], const Address*rAddr, int dir);
-void unpackXYZTFVec(InstVector& ivector, const string &r, const Address*rAddr, string dir, string srz);
 
 inline void movFVec(InstVector& ivector, const FVec& ret, const FVec& a, string mask)
 {
@@ -1003,21 +659,6 @@ inline void elseIfStatement(InstVector& ivector, string condition)
     ivector.push_back( new ElseIfStatement(condition));
 }
 
-inline void forLoopInc(InstVector& ivector, string index, string begin, string end, string inc="1")
-{
-    ivector.push_back( new ForLoopInc(index, begin, end, inc));
-}
-
-inline void forLoopDec(InstVector& ivector, string index, string begin, string end, string dec="1")
-{
-    ivector.push_back( new ForLoopDec(index, begin, end, dec));
-}
-
-inline void forLoopStatement(InstVector& ivector, string begin, string end, string inc)
-{
-    ivector.push_back( new ForLoopStatement(begin, end, inc));
-}
-
 inline void ifAllOneStatement(InstVector& ivector, string condition)
 {
     ivector.push_back( new IfAllOneCond(condition));
@@ -1045,46 +686,6 @@ inline void initFVec(InstVector& ivector, const FVec& ret)
     ivector.push_back(new InitFVec(ret));
 }
 
-inline void declareInt(InstVector& ivector, const std::string name, const std::string value="")
-{
-    ivector.push_back(new DeclareInt(name, value));
-}
-
-inline void initInt(InstVector& ivector, const string name, const string value)
-{
-    ivector.push_back(new IntToMask(name, value));
-}
-
-inline void declareFVecArray(InstVector& ivector, const std::string name, int dim, int *len)
-{
-    FVec tmp(name);
-    ivector.push_back(new DeclareFVecArray(tmp, dim, len));
-}
-
-inline void declareFVecArrayFromFVec(InstVector& ivector, const FVec& v, int dim, int *len)
-{
-    ivector.push_back(new DeclareFVecArray(v, dim, len));
-}
-
-/*
-inline void declare_MM_PERM(InstVector& ivector)
-{
-    ivector.push_back(new Declare_MM_PERM());
-}
-*/
-
-inline void declarePACKMASK(InstVector& ivector)
-{
-    ivector.push_back(new DeclarePACKMASK());
-}
-
-/*
-inline void declare_FVec(InstVector& ivector, string vect)
-{
-    ivector.push_back(new Declare_FVec(vect));
-}
-*/
-
 inline void setZero(InstVector& ivector, const FVec& ret)
 {
     ivector.push_back(new SetZero(ret));
@@ -1100,24 +701,9 @@ inline void mulFVec(InstVector& ivector, const FVec& ret, const FVec& a, const F
     ivector.push_back(new Mul(ret, a, b, mask));
 }
 
-inline void smulFVec(InstVector& ivector, const FVec& ret, const FVec& a, string s, string mask = "")
-{
-    ivector.push_back(new SMul(ret, a, s, mask));
-}
-
-inline void nsmulFVec(InstVector& ivector, const FVec& ret, const FVec& a, string s, string mask = "")
-{
-    ivector.push_back(new NSMul(ret, a, s, mask));
-}
-
 inline void addFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, string mask = "")
 {
     ivector.push_back(new Add(ret, a, b, mask));
-}
-
-inline void naddFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, string mask = "")
-{
-    ivector.push_back(new NAdd(ret, a, b, mask));
 }
 
 inline void subFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, string mask = "")
@@ -1130,29 +716,9 @@ inline void fmaddFVec(InstVector& ivector, const FVec& ret, const FVec& a, const
     ivector.push_back(new FMAdd(ret, a, b, c, mask));
 }
 
-inline void fsmaddFVec(InstVector& ivector, const FVec& ret, const FVec& a, string s, const FVec& c, string mask = "")
-{
-    ivector.push_back(new FSMAdd(ret, a, s, c, mask));
-}
-
-inline void fmsmaddFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, string s, const FVec& c, string mask = "")
-{
-    ivector.push_back(new FMSMAdd(ret, a, b, s, c, mask));
-}
-
 inline void fnmaddFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, const FVec& c, string mask = "")
 {
     ivector.push_back(new FnMAdd(ret, a, b, c, mask));
-}
-
-inline void fsnmaddFVec(InstVector& ivector, const FVec& ret, const FVec& a, string s, const FVec& c, string mask = "")
-{
-    ivector.push_back(new FSnMAdd(ret, a, s, c, mask));
-}
-
-inline void fmsnmaddFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, string s, const FVec& c, string mask = "")
-{
-    ivector.push_back(new FMSnMAdd(ret, a, b, s, c, mask));
 }
 
 inline void divFVec(InstVector& ivector, const FVec& ret, const FVec& a, const FVec& b, string mask = "")
@@ -1168,11 +734,6 @@ inline void sqrtFVec(InstVector& ivector, const FVec& ret, const FVec& a, string
 inline void loadFVec(InstVector& ivector, const FVec& ret, const Address *a, string mask)
 {
     ivector.push_back( new LoadFVec(ret, a, mask));
-}
-
-inline void storeFVec(InstVector& ivector, const FVec& ret, const Address *a, string mask)
-{
-    ivector.push_back( new StoreFVecMask(ret, a, mask));
 }
 
 inline void storeFVec(InstVector& ivector, const FVec& ret, const Address *a, int isStreaming)

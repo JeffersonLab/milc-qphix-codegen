@@ -84,6 +84,35 @@ void declare_Clover(InstVector& ivector, FVec diag[6], FVec offdiag[15][2]) {
     }
 }
 
+void movCVec(InstVector& ivector, FVec *r, FVec *s1, string &mask)
+{
+    movFVec(ivector, r[RE], s1[RE], mask);
+    movFVec(ivector, r[IM], s1[IM], mask);
+}
+
+void addCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, string &mask)
+{
+    addFVec(ivector, r[RE], s1[RE], s2[RE], mask);
+    addFVec(ivector, r[IM], s1[IM], s2[IM], mask);
+}
+
+void subCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, string &mask)
+{
+    subFVec(ivector, r[RE], s1[RE], s2[RE], mask);
+    subFVec(ivector, r[IM], s1[IM], s2[IM], mask);
+}
+
+void addiCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, string &mask)
+{
+    subFVec(ivector, r[RE], s1[RE], s2[IM], mask);
+    addFVec(ivector, r[IM], s1[IM], s2[RE], mask);
+}
+
+void subiCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, string &mask)
+{
+    addFVec(ivector, r[RE], s1[RE], s2[IM], mask);
+    subFVec(ivector, r[IM], s1[IM], s2[RE], mask);
+}
 
 // r[RE] = s1[RE]-beta_vec*s2[RE] = fnmadd(beta_vec,s2[RE],s1[RE])
 // r[IM] = s1[IM]-beta_vec*s2[IM] = fnamdd(beta_vec,s2[IM],s1[IM])
@@ -148,6 +177,34 @@ void subiCVec_pbeta(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, FVec &beta
     fnmaddFVec(ivector, r[IM], beta_vec, s2[RE], s1[IM], mask);
 }
 
+// r = s1*s2
+void mulCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, string &mask)
+{
+    mulFVec(ivector, r[RE], s1[RE], s2[RE], mask);
+    fnmaddFVec(ivector, r[RE], s1[IM], s2[IM], r[RE], mask);
+    mulFVec(ivector, r[IM], s1[RE], s2[IM], mask);
+    fmaddFVec(ivector, r[IM], s1[IM], s2[RE], r[IM], mask);
+}
+
+// r = s1*s2+s3
+void fmaddCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2,  FVec *s3, string &mask)
+{
+    fmaddFVec(ivector, r[RE], s1[RE], s2[RE], s3[RE], mask);
+    fnmaddFVec(ivector, r[RE], s1[IM], s2[IM], r[RE], mask);
+    fmaddFVec(ivector, r[IM], s1[RE], s2[IM], s3[IM], mask);
+    fmaddFVec(ivector, r[IM], s1[IM], s2[RE], r[IM], mask);
+}
+
+// r = s3-s1*s2
+//r[RE] = (s3[RE]-s1[RE]*s2[RE])+(s1[IM]*s2[IM])
+//r[IM] = (s3[IM]-s1[RE]*s2[IM])-(s1[IM]*s2[RE])
+void fnmaddCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2,  FVec *s3, string &mask)
+{
+    fnmaddFVec(ivector, r[RE], s1[RE], s2[RE], s3[RE], mask);
+    fmaddFVec(ivector, r[RE], s1[IM], s2[IM], r[RE], mask);
+    fnmaddFVec(ivector, r[IM], s1[RE], s2[IM], s3[IM], mask);
+    fnmaddFVec(ivector, r[IM], s1[IM], s2[RE], r[IM], mask);
+}
 
 // r = (s1*s2-s3*s4)'
 //r[RE] = (s1[RE]*s2[RE])-(s1[IM]*s2[IM])-(s3[RE]*s4[RE])+(s3[IM]*s4[IM])
@@ -163,6 +220,101 @@ void Conj_CrossProd(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, FVec *s3, 
     fmaddFVec(ivector, r[IM], s3[IM], s4[RE], r[IM], mask);
     fnmaddFVec(ivector, r[IM], s1[RE], s2[IM], r[IM], mask);
     fnmaddFVec(ivector, r[IM], s1[IM], s2[RE], r[IM], mask);
+}
+
+// r = s1'*s2
+//r[RE] = (s1[RE]*s2[RE])+(s1[IM]*s2[IM])
+//r[IM] = (s1[RE]*s2[IM])-(s1[IM]*s2[RE])
+void mulConjCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2, string &mask)
+{
+    mulFVec(ivector, r[RE], s1[RE], s2[RE], mask);
+    fmaddFVec(ivector, r[RE], s1[IM], s2[IM], r[RE], mask);
+    mulFVec(ivector, r[IM], s1[RE], s2[IM], mask);
+    fnmaddFVec(ivector, r[IM], s1[IM], s2[RE], r[IM], mask);
+}
+
+// r = s1'*s2+s3
+//r[RE] = (s3[RE]+s1[RE]*s2[RE])+(s1[IM]*s2[IM])
+//r[IM] = (s3[IM]+s1[RE]*s2[IM])-(s1[IM]*s2[RE])
+void fmaddConjCVec(InstVector& ivector, FVec *r, FVec *s1, FVec *s2,  FVec *s3, string &mask)
+{
+    fmaddFVec(ivector, r[RE], s1[RE], s2[RE], s3[RE], mask);
+    fmaddFVec(ivector, r[RE], s1[IM], s2[IM], r[RE], mask);
+    fmaddFVec(ivector, r[IM], s1[RE], s2[IM], s3[IM], mask);
+    fnmaddFVec(ivector, r[IM], s1[IM], s2[RE], r[IM], mask);
+}
+
+// r[1][3] = s_vec[1][3] * u_mat[3][3](')
+// Transposed matrix vector multiplication
+void matMultVecT(InstVector& ivector, FVec r[3][2], FVec s_vec[3][2], FVec u_mat[3][3][2], bool adjMul, string mask)
+{
+    for(int c1 = 0; c1 < 3; c1++) {
+        if(!adjMul) {
+            mulCVec(ivector, r[c1], u_mat[0][c1], s_vec[0], mask);
+            fmaddCVec(ivector, r[c1], u_mat[1][c1], s_vec[1], r[c1], mask);
+            fmaddCVec(ivector, r[c1], u_mat[2][c1], s_vec[2], r[c1], mask);
+        }
+        else {
+            mulConjCVec(ivector, r[c1], u_mat[c1][0], s_vec[0], mask);
+            fmaddConjCVec(ivector, r[c1], u_mat[c1][1], s_vec[1], r[c1], mask);
+            fmaddConjCVec(ivector, r[c1], u_mat[c1][2], s_vec[2], r[c1], mask);
+        }
+    }
+}
+
+// r[3][1] = u_mat[3][3](') * s_vec[3][1]
+void matMultVec(InstVector& ivector, FVec r[3][2], FVec u_mat[3][3][2], FVec s_vec[3][2], bool adjMul, string mask)
+{
+    for(int c1 = 0; c1 < 3; c1++) {
+        if(!adjMul) {
+            mulCVec(ivector, r[c1], u_mat[c1][0], s_vec[0], mask);
+            fmaddCVec(ivector, r[c1], u_mat[c1][1], s_vec[1], r[c1], mask);
+            fmaddCVec(ivector, r[c1], u_mat[c1][2], s_vec[2], r[c1], mask);
+        }
+        else {
+            mulConjCVec(ivector, r[c1], u_mat[0][c1], s_vec[0], mask);
+            fmaddConjCVec(ivector, r[c1], u_mat[1][c1], s_vec[1], r[c1], mask);
+            fmaddConjCVec(ivector, r[c1], u_mat[2][c1], s_vec[2], r[c1], mask);
+        }
+    }
+}
+
+// u_ret = u_mat1 * u_mat2(')
+void matMultMat(InstVector& ivector, FVec u_ret[3][3][2], FVec u_mat1[3][3][2], FVec u_mat2[3][3][2], bool adjMul, string mask)
+{
+    for(int i = 0; i < 3; i++) {
+        matMultVecT(ivector, u_ret[i], u_mat1[i], u_mat2, adjMul, mask);
+    }
+}
+
+// u_ret = u_mat1' * u_mat2
+void adjMatMultMat(InstVector& ivector, FVec u_ret[3][3][2], FVec u_mat1[3][3][2], FVec u_mat2[3][3][2], string mask)
+{
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            mulConjCVec(ivector, u_ret[i][j], u_mat1[0][i], u_mat2[0][j], mask);
+            fmaddConjCVec(ivector, u_ret[i][j], u_mat1[1][i], u_mat2[1][j], u_ret[i][j], mask);
+            fmaddConjCVec(ivector, u_ret[i][j], u_mat1[2][i], u_mat2[2][j], u_ret[i][j], mask);
+        }
+    }
+}
+
+//void decompressGauge(InstVector& ivector, FVec u_gauge[3][3][2], bool compress12, string mask)
+void decompressGauge(InstVector& ivector, FVec u_gauge[3][3][2], FVec norm, bool compress12, string mask)
+{
+    if( compress12 ) {
+	mulFVec(ivector, norm, u_gauge[0][0][0], u_gauge[0][0][0], mask);
+	fmaddFVec(ivector, norm, u_gauge[0][0][1], u_gauge[0][0][1], norm, mask);
+	for(int c=1; c<3; c++) for(int ir=0; ir<2; ++ir) {
+	    fmaddFVec(ivector, norm, u_gauge[0][c][ir], u_gauge[0][c][ir], norm, mask);
+	}
+	sqrtFVec(ivector, norm, norm, mask);
+        for(int c = 0; c < 3; c++) {
+            Conj_CrossProd(ivector, u_gauge[2][c], u_gauge[0][(c+1)%3], u_gauge[1][(c+2)%3], u_gauge[0][(c+2)%3], u_gauge[1][(c+1)%3], mask);
+            divFVec(ivector, u_gauge[2][c][0], u_gauge[2][c][0], norm, mask);
+	    divFVec(ivector, u_gauge[2][c][1], u_gauge[2][c][1], norm, mask);
+	}	
+    }
 }
 
 // Merge L2 prefetches with another instruction stream
@@ -232,6 +384,7 @@ void dumpIVector(InstVector& ivector, string filename)
     for ( map<string,string>::iterator  it = offslist.begin(); it != offslist.end(); ++it ) {
         ivector.insert(ivector.begin(), new DeclareOffsets(it->first, it->second ));
     }
+
     ofstream outfile(filename.c_str());
     for(int i=0; i < ivector.size(); i++) {
         outfile << ivector[i]->serialize() << endl;

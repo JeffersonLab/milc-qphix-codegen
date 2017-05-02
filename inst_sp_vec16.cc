@@ -29,22 +29,6 @@ string InitFVec::serialize() const
 #endif
 }
 
-/*
-string Declare_MM_PERM::serialize() const
-{
-#ifndef AVX512
-    return "_MM_PERM_ENUM MM_PERM[8] = { _MM_SWIZ_REG_CDAB, _MM_SWIZ_REG_CDAB, _MM_SWIZ_REG_BADC, _MM_SWIZ_REG_BADC, _MM_PERM_CDAB, _MM_PERM_CDAB, _MM_PERM_BADC, _MM_PERM_BADC };";
-#else
-    return "_MM_PERM_ENUM MM_PERM[8] = { (_MM_PERM_ENUM)0xB1, (_MM_PERM_ENUM)0xB1, (_MM_PERM_ENUM)0x4E, (_MM_PERM_ENUM)0x4E, (_MM_PERM_ENUM)0xB1, (_MM_PERM_ENUM)0xB1, (_MM_PERM_ENUM)0x4E, (_MM_PERM_ENUM)0x4E };";
-#endif
-}
-*/
-
-string DeclarePACKMASK::serialize() const
-{
-    return " __mmask16 PACKMASK[2][4] = {{0x5555, 0x3333, 0x0F0F, 0x00FF}, {0xAAAA, 0xCCCC, 0xF0F0, 0xFF00}};";
-}
-
 string DeclareMask::serialize() const
 {
     ostringstream outbuf;
@@ -121,19 +105,6 @@ string StoreFVec::serialize() const
     else {
         buf << "_mm512_extstore_ps(" << a->serialize() << "," << v.getName() <<  ", " << downConv << ", _MM_HINT_NONE);" <<endl;
     }
-
-    return buf.str();
-}
-
-string StoreFVecMask::serialize() const
-{
-    ostringstream buf;
-    string downConv = "_MM_DOWNCONV_PS_NONE";
-
-    if(a->isHalfType()) {
-        downConv = "_MM_DOWNCONV_PS_FLOAT16";
-    }
-    buf << "_mm512_mask_extstore_ps(" << a->serialize() << ", " << mask << ", " << v.getName() <<  ", " << downConv << ", _MM_HINT_NONE);" <<endl;
 
     return buf.str();
 }
@@ -452,26 +423,6 @@ string Mul::serialize() const
     }
 }
 
-string SMul::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_mul_ps( "+a.getName()+" , _mm512_set1_ps( "+scalar+" ));" ;
-    }
-    else {
-        return  ret.getName()+ " = _mm512_mask_mul_ps( " + ret.getName() + "," + mask + "," + a.getName() + " , _mm512_set1_ps( " + scalar + " ));" ;
-    }
-}
-
-string NSMul::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_mul_ps( "+a.getName()+" , _mm512_set1_ps( (float)-("+ scalar +") ));" ;
-    }
-    else {
-        return  ret.getName()+ " = _mm512_mask_mul_ps( " + ret.getName() + "," + mask + "," + a.getName() + " , _mm512_set1_ps( (float)-(" + scalar + ") ));" ;
-    }
-}
-
 string FnMAdd::serialize() const
 {
     if(mask.empty()) {
@@ -479,26 +430,6 @@ string FnMAdd::serialize() const
     }
     else {
         return  ret.getName()+" = _mm512_mask_mov_ps(" + ret.getName() + ", " + mask + ", _mm512_fnmadd_ps(" +a.getName()+", "+b.getName()+", "+c.getName()+"));" ;
-    }
-}
-
-string FSnMAdd::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_fnmadd_ps("+a.getName()+", _mm512_set1_ps( "+b+"), "+c.getName()+");" ;
-    }
-    else {
-        return  ret.getName()+" = _mm512_mask_mov_ps(" + ret.getName() + ", " + mask + ", _mm512_fnmadd_ps(" +a.getName()+", _mm512_set1_ps( "+b+"), "+c.getName()+"));" ;
-    }
-}
-
-string FMSnMAdd::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_fnmadd_ps("+a.getName()+", _mm512_mul_ps( "+b.getName()+", _mm512_set1_ps( "+c+")), "+d.getName()+");" ;
-    }
-    else {
-        return  ret.getName()+" = _mm512_mask_mov_ps(" + ret.getName() + ", " + mask + ", _mm512_fnmadd_ps("+a.getName()+", _mm512_mul_ps( "+b.getName()+", _mm512_set1_ps("+c+")), "+d.getName()+"));" ;
     }
 }
 
@@ -512,26 +443,6 @@ string FMAdd::serialize() const
     }
 }
 
-string FSMAdd::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_fmadd_ps("+a.getName()+", _mm512_set1_ps( "+b+"), "+c.getName()+");" ;
-    }
-    else {
-        return  ret.getName()+" = _mm512_mask_mov_ps(" + ret.getName() + ", " + mask + ", _mm512_fmadd_ps(" +a.getName()+", _mm512_set1_ps( "+b+"), "+c.getName()+"));" ;
-    }
-}
-
-string FMSMAdd::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_fmadd_ps("+a.getName()+", _mm512_mul_ps("+b.getName()+", _mm512_set1_ps( "+c+" )), "+d.getName()+");" ;
-    }
-    else {
-        return ret.getName()+" = _mm512_mask_mov_ps(" + ret.getName() + ", " + mask + ", _mm512_fmadd_ps("+a.getName()+", _mm512_mul_ps("+b.getName()+", _mm512_set1_ps( "+c+" )), "+d.getName()+"));" ;
-    }
-}
-
 string Add::serialize() const
 {
     if(mask.empty()) {
@@ -539,16 +450,6 @@ string Add::serialize() const
     }
     else {
         return  ret.getName()+" = _mm512_mask_add_ps( " + ret.getName() + "," + mask + "," +a.getName()+" , "+b.getName()+" );" ;
-    }
-}
-
-string NAdd::serialize() const
-{
-    if(mask.empty()) {
-        return  ret.getName()+" = _mm512_sub_ps( _mm512_set1_ps(0.0), _mm512_add_ps( "+a.getName()+" , "+b.getName()+" ));" ;
-    }
-    else {
-        return  ret.getName()+" = _mm512_mask_sub_ps( " + ret.getName() + "," + mask + ", _mm512_set1_ps(0.0), _mm512_add_ps( " +a.getName()+" , "+b.getName()+" ));" ;
     }
 }
 
@@ -643,75 +544,6 @@ public:
 			stream << ret.getName() << " = _mm512_shuffle_f32x4(" << a.getName() << ", "  << a.getName() << ", " << imm << ");" ;
 		}
 #endif // AVX512
-        return stream.str();
-    }
-    int numArithmeticInst() const
-    {
-        return 0;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    int dir;
-};
-
-class PermuteXYZTFVecDir : public Instruction
-{
-public:
-    PermuteXYZTFVecDir(const FVec& ret_, const FVec& a_, const string& dir_) : ret(ret_), a(a_), dir(dir_) {}
-    string serialize() const
-    {
-        ostringstream stream;
-#ifndef AVX512
-                stream << "if(((" << dir << ")>>1) == 0) " << ret.getName() << " = _mm512_swizzle_ps(" << a.getName() << ", _MM_SWIZ_REG_CDAB);" << endl
-			<< "else if(((" << dir << ")>>1) == 1) " << ret.getName() << " = _mm512_swizzle_ps(" << a.getName() << ", _MM_SWIZ_REG_BADC);" << endl
-			<< "else if(((" << dir << ")>>1) == 2) " << ret.getName() << " = _mm512_permute4f128_ps(" << a.getName() << ", _MM_PERM_CDAB);" << endl
-                        << "else " << ret.getName() << " = _mm512_permute4f128_ps(" << a.getName() << ", _MM_PERM_BADC);" ;
-#else
-                stream << "if(((" << dir << ")>>1) == 0) " << ret.getName() << " = _mm512_permute_ps(" << a.getName() << ", (_MM_PERM_ENUM)0xB1);" << endl
-			<< "else if(((" << dir << ")>>1) == 1) " << ret.getName() << " = _mm512_permute_ps(" << a.getName() << ", (_MM_PERM_ENUM)0x4E);" << endl
-			<< "else if(((" << dir << ")>>1) == 2) " << ret.getName() << " = _mm512_shuffle_f32x4(" << a.getName() << ", "  << a.getName() << ", (_MM_PERM_ENUM)0xB1);" << endl
-                        << "else " << ret.getName() << " = _mm512_shuffle_f32x4(" << a.getName() << ", "  << a.getName() << ", (_MM_PERM_ENUM)0x4E);" ;
-#endif 
-        return stream.str();
-    }
-    int numArithmeticInst() const
-    {
-        return 0;
-    }
-private:
-    const FVec ret;
-    const FVec a;
-    const string dir;
-};
-
-
-class APermuteXYZTFVec : public Instruction
-{
-public:
-    APermuteXYZTFVec(const FVec& ret_, const FVec& a_, int dir_) : ret(ret_), a(a_), dir(dir_/2) {}
-    string serialize() const
-    {
-        ostringstream stream;
-#ifndef AVX512
-                if(dir < 2) {
-                        string imm = (dir == 0 ? "_MM_SWIZ_REG_CDAB" : "_MM_SWIZ_REG_BADC");
-                stream << ret.getName() << " = _mm512_swizzle_ps(" << a.getName() << ", "  << imm << ");";
-                }
-                else {
-                        string imm = (dir == 2 ? "_MM_PERM_CDAB" : "_MM_PERM_BADC");
-                        stream << ret.getName() << " = _mm512_permute4f128_ps(" << a.getName() << ", " << imm << ");" ;
-                }
-#else 
-                if(dir < 2) {
-                        string imm = (dir == 0 ? "0xB1" : "0x4E");
-                stream << ret.getName() << " = _mm512_permute_ps(" << a.getName() << ", "  << imm << ");";
-                }
-                else {
-                        string imm = (dir == 2 ? "0xB1" : "0x4E");
-                        stream << ret.getName() << " = _mm512_shuffle_f32x4(" << a.getName() << ", "  << a.getName() << ", " << imm << ");" ;
-                }
-#endif 
         return stream.str();
     }
     int numArithmeticInst() const
@@ -951,21 +783,6 @@ void permuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, int dir)
 	ivector.push_back(new PermuteXYZTFVec(r, f, dir));
 }
 
-void permuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, string dir)
-{
-        ivector.push_back(new PermuteXYZTFVecDir(r, f, dir));
-}
-
-void aPermuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, int dir)
-{
-	ivector.push_back(new APermuteXYZTFVec(r, f, dir));
-}
-
-void aPermuteXYZTFVec(InstVector& ivector, const FVec r, const FVec f, string dir)
-{
-        ivector.push_back(new PermuteXYZTFVecDir(r, f, dir));
-}
-
 int packXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, const Address*rAddr, int dir) 
 {
 	int dim = dir/2;
@@ -980,44 +797,6 @@ int packXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, cons
 	return VECLEN;
 }
 
-void packXYZTFVec(InstVector& ivector, const string& r, const Address*lAddr, const Address*rAddr, string dir, string srz)
-{
-/*
-        int dim = dir/2;
-        int fb = dir % 2;
-        string masks[2][4] = {{"0x5555", "0x3333", "0x0F0F", "0x00FF"}, {"0xAAAA", "0xCCCC", "0xF0F0", "0xFF00"}};
-*/
-        ivector.push_back( new PackStoreFVec(FVec(r+"[0]"), rAddr, "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-	ivector.push_back( new PackStoreFVec(FVec(r+"[0]"), lAddr, "PACKMASK[1-(("+dir+")&1)][("+dir+")>>1]"));
-	ivector.push_back( new PackStoreFVec(FVec(r+"[1]"), new AddressImm(rAddr, VECLEN/2), "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-	ivector.push_back( new PackStoreFVec(FVec(r+"[1]"), new AddressImm(lAddr, VECLEN/2), "PACKMASK[1-(("+dir+")&1)][("+dir+")>>1]"));
-	//return VECLEN;
-	ivector.push_back( new IntToMask(srz, "VECLEN") );
-}
-
-int packXYZTFVec(InstVector& ivector, const FVec r[2], const Address*rAddr, int dir)
-{
-	int dim = dir/2;
-	int fb = dir % 2;
-	string masks[2][4] = {{"0x5555", "0x3333", "0x0F0F", "0x00FF"}, {"0xAAAA", "0xCCCC", "0xF0F0", "0xFF00"}};
-	ivector.push_back( new PackStoreFVec(r[0], rAddr, masks[fb][dim]));
-	ivector.push_back( new PackStoreFVec(r[1], new AddressImm(rAddr, VECLEN/2), masks[fb][dim]));
-	return VECLEN;
-}
-
-void packXYZTFVec(InstVector& ivector, const string& r, const Address*rAddr, string dir, string srz)
-{
-/*
-	int dim = dir/2;
-        int fb = dir % 2;
-	string masks[2][4] = {{"0x5555", "0x3333", "0x0F0F", "0x00FF"}, {"0xAAAA", "0xCCCC", "0xF0F0", "0xFF00"}};
-*/
-        ivector.push_back( new PackStoreFVec(FVec(r+"[0]"), rAddr, "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-        ivector.push_back( new PackStoreFVec(FVec(r+"[1]"), new AddressImm(rAddr, VECLEN/2), "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-        //return VECLEN;
-        ivector.push_back( new IntToMask(srz, "VECLEN") );
-}
-
 int unpackXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, const Address*rAddr, int dir) {
 	int dim = dir/2;
 	int fb = dir % 2;
@@ -1029,43 +808,6 @@ int unpackXYZTFVec(InstVector& ivector, const FVec r[2], const Address*lAddr, co
 	ivector.push_back( new LoadUnpackFVec(r[1], new AddressImm(lAddr, VECLEN/2), masks[1-fb][dim]));
 
 	return VECLEN;
-}
-
-void unpackXYZTFVec(InstVector& ivector, const string &r, const Address*lAddr, const Address*rAddr, string dir, string srz)
-{
-/*
-	int dim = dir/2;
-        int fb = dir % 2;
-        string masks[2][4] = {{"0x5555", "0x3333", "0x0F0F", "0x00FF"}, {"0xAAAA", "0xCCCC", "0xF0F0", "0xFF00"}};
-*/
-	ivector.push_back( new LoadUnpackFVec(FVec(r+"[0]"), rAddr, "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-	ivector.push_back( new LoadUnpackFVec(FVec(r+"[0]"), lAddr, "PACKMASK[1-(("+dir+")&1)][("+dir+")>>1]"));
-	ivector.push_back( new LoadUnpackFVec(FVec(r+"[1]"), new AddressImm(rAddr, VECLEN/2), "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-        ivector.push_back( new LoadUnpackFVec(FVec(r+"[1]"), new AddressImm(lAddr, VECLEN/2), "PACKMASK[1-(("+dir+")&1)][("+dir+")>>1]"));
-	//return VECLEN;
-	ivector.push_back( new IntToMask(srz, "VECLEN") );
-}
-
-int unpackXYZTFVec(InstVector& ivector, const FVec r[2], const Address*rAddr, int dir) {
-	int dim = dir/2;
-	int fb = dir % 2;
-	string masks[2][4] = {{"0x5555", "0x3333", "0x0F0F", "0x00FF"}, {"0xAAAA", "0xCCCC", "0xF0F0", "0xFF00"}};
-	ivector.push_back( new LoadUnpackFVec(r[0], rAddr, masks[fb][dim]));
-	ivector.push_back( new LoadUnpackFVec(r[1], new AddressImm(rAddr, VECLEN/2), masks[fb][dim]));
-	return VECLEN;
-}
-
-void unpackXYZTFVec(InstVector& ivector, const string &r, const Address*rAddr, string dir, string srz)
-{
-/*
-        int dim = dir/2;
-        int fb = dir % 2;
-        string masks[2][4] = {{"0x5555", "0x3333", "0x0F0F", "0x00FF"}, {"0xAAAA", "0xCCCC", "0xF0F0", "0xFF00"}};
-*/
-        ivector.push_back( new LoadUnpackFVec(FVec(r+"[0]"), rAddr, "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-	ivector.push_back( new LoadUnpackFVec(FVec(r+"[1]"), new AddressImm(rAddr, VECLEN/2), "PACKMASK[("+dir+")&1][("+dir+")>>1]"));
-	//return VECLEN;
-	ivector.push_back( new IntToMask(srz, "VECLEN") );
 }
 
 #endif
