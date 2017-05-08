@@ -26,7 +26,7 @@ Available targets are:
  avx2 - AVX2 (e.g. for Haswell) -- tested for KS CG (master branch)
  avx512 - AVX512 (e.g. for KNL) -- tested for KS CG and GF (master and gauge_force branch)
  sse  - For SSE -- untested
- scalar -- C, scalar code (SOALEN=1)
+ scalar -- C, scalar code (VECLEN=1)
 
 iii) Run the code with 'make <target>' this will build the code generator and generate the code for the target.  The target specific code, will be placed in the subdirectory corresponding to the target (ie MIC code goes to mic/ AVX code goes to avx/ etc).
 
