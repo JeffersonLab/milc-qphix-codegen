@@ -24,7 +24,7 @@ Available targets are:
  mic - Xeon Phi KNC
  avx - Regular AVX 
  avx2 - AVX2 (e.g. for Haswell) -- tested for KS CG (master branch)
- avx512 - AVX512 (e.g. for KNL) -- tested for KS CG and GF (master and gauge_force branch)
+ avx512 - AVX512 (e.g. for KNL) -- tested for KS CG (master branch), and KS CG + GF (gauge_force branch)
  sse  - For SSE -- untested
  scalar -- C, scalar code (VECLEN=1)
 
