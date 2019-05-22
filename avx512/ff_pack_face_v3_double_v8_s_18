@@ -1,0 +1,25 @@
+__m512d tmpMtr[3][2];
+ __mmask8 PACKMASK[2][4] = {{0x55, 0x33, 0x0F, 0xFF}, {0xAA, 0xCC, 0xF0, 0xFF}};
+ for ( int c1=0; c1<3; c1+=1 ) { 
+tmpMtr[c1][0] = _mm512_mask_load_pd(tmpMtr[c1][0], 0xFF, (*giBase)[c1][0]);
+
+tmpMtr[c1][1] = _mm512_mask_load_pd(tmpMtr[c1][1], 0xFF, (*giBase)[c1][1]);
+
+}
+ for ( int r=0, rsz=0, rpackoffset = 0; r<3; ++r,rpackoffset += rsz) { 
+ if ( ((dir)>>1) < 3 ) { 
+_mm512_mask_compressstoreu_pd(((rBuf)+rpackoffset), 0x55, tmpMtr[r][0]);
+
+_mm512_mask_compressstoreu_pd((((rBuf)+rpackoffset)+4), 0x55, tmpMtr[r][1]);
+
+rsz = VECLEN;
+
+} else {
+_mm512_stream_pd((void*)((rBuf)+rpackoffset),tmpMtr[r][0]);
+
+_mm512_stream_pd((void*)(((rBuf)+rpackoffset)+8),tmpMtr[r][1]);
+
+rsz = 2*VECLEN;
+
+}
+}
