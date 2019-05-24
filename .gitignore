@@ -1,0 +1,6 @@
+avx512/gauge*
+avx512/gf_*
+avx512/gforce*
+avx512/ks*
+avx512/momentum*
+avx512/update*
