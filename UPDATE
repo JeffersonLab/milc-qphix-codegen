@@ -1,0 +1,44 @@
+############### QPHIX code-gen update ################
+#
+# Ruizi Li,	Jan 15th. 2017
+#
+######################################################
+#
+# The staggered QPhiX code generator for MILC is updated to
+# 1. include matrix-matrix algebras, 
+# 2. reduce the intrinsic function size by undo unrolling (see XX_str.cc files).
+#
+#
+# Added C++ source files:
+# 1. complex.cc - complex number algebras, e.g., movCVec, addCVec, etc
+# 2. complex_str.cc - complex number linear algebras string version, suitable within a loop
+# 3. data_utils.cc - high level declarations and load/store functions called by GF routine
+# 3. gf_imp_xyzt.cc - Symanzik's improved gauge force(GF) routine 
+# 4. mat_utils.cc - SU(3) matrix linear algebras, e.g., decompressGauge, matHerm, matMultVec, etc
+# 5. mat_utils_str.cc - SU(3) matrix linear algebras string version, suitable within a loop
+# 6. staples.cc - staple calculations, e.g., staple, rectangle0, etc
+# 7. staples_str.cc - staple calculations string version, suitable within a loop
+#
+# Added headers:
+# complex.h, data_utils.h, gf_imp_xyzt.h, macros.h(miscellaneous macros), mat_utils.h, staples.h
+#
+# Modified C++ source files:
+# 1. data_types_xyzt.cc - added SU(3) gauge and Hermitian matrix load/store/(un)pack, 
+#                         e.g., readFVecHermit, readFVecHermit(string version), 
+#                               PackGauge7WayDir, PackGauge7WayDir(string version), etc.
+# 2. inst_{s,d}p_vec{4,8,16}.cc - added intrinsic generators for new algebras and memory access, 
+#                                TODO for AVX(2), SSE
+#
+# Modified headers:
+# 1. address_types.h - added new address types, e.g., class HermitAddress (Hermitian matrix), etc
+# 2. data_types_xyzt.h - added new data types, e.g., HermitBaseType (Hermitian matrix), etc
+# 3. instructions.h - added instructions to be included in a loop, 
+#                     e.g., ForLoopInc (for-loop with increased index), 
+#                           DeclareFVecArray (declear an array), 
+#                           DeclarePACKMASK (declear pack masks in 4 directions), etc.,
+#                     and instructions with one or more scalar, 
+#                     e.g., class SMul (scalar times FVec), NSMul (-1 times scalar times FVec), etc.
+#
+#
+######################################################
+

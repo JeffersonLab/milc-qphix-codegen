@@ -189,6 +189,378 @@ void UnpackKSSpinor(InstVector& ivector, const FVec ret[3][2], const string& lBa
 			new AddressImm(new GenericAddress(rBase, SpinorType), runpackoffset), dir);
 		runpackoffset += rsz;
 		if(rsz == VECLEN) lunpackoffset += rsz;
+    }
+}
+
+void PackGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& rBase, int dir, bool compress12)
+{
+    int rpackoffset = 0;
+    for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {
+	int rsz = packXYZTFVec(ivector, ret[r][c], 
+		new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir);
+	rpackoffset += rsz;
+    }
+}
+
+void PackGaugeDir(InstVector& ivector, string ret, const string& rBase, string dir, bool compress12)
+{
+    if(compress12)
+        forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<2", "++r");
+    else
+	forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<3", "++r");
+    {
+            forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+            {
+                packXYZTFVec(ivector, ret+"[r][c]", new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
+            }
+            endScope(ivector);
+    }
+    endScope(ivector); 
+}
+
+void PackGauge7WayDir(InstVector& ivector, const FVec ret[7][2][3][2], /*const string& lBase,*/ const string& rBase, int dir)
+{
+    int rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<2; r++) for(int c=0; c<3; ++c) 
+    {
+	int rsz = packXYZTFVec(ivector, ret[d][r][c], /*new AddressImm(new GenericAddress(lBase, GaugeType), lpackoffset),*/
+		new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir);
+	rpackoffset += rsz;
+    }
+}
+
+void PackGauge7WayDir(InstVector& ivector, const FVec ret[7][2][3][2], const string& lBase, const string& rBase, int dir)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<2; r++) for(int c=0; c<3; ++c)
+    {        int rsz = packXYZTFVec(ivector, ret[d][r][c], new AddressImm(new GenericAddress(lBase, GaugeType), lpackoffset),
+		new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir);
+        rpackoffset += rsz;
+        if(rsz == VECLEN) lpackoffset += rsz;
+    }
+}
+
+void PackGauge7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir)
+{
+    forLoopStatement(ivector, "int d=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "d<7", "++d");
+    {
+	forLoopInc(ivector, "r", "0", "2");
+	{
+	    forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+	    {
+		packXYZTFVec(ivector, ret+"[d][r][c]", new AddressImmStr(new GenericAddress(lBase, GaugeType), "lpackoffset"), new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
+		ifStatement(ivector, "rsz == VECLEN");
+		{
+		    initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
+		}
+		endScope(ivector);
+	    }
+	    endScope(ivector);
+	}
+	endScope(ivector);
+    }
+    endScope(ivector);
+}
+
+void UnpackGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& lBase, const string& rBase, int dir, bool compress12)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    for(int r=0; r<3-compress12; ++r) for(int c=0; c<3; ++c)
+    {
+	int rsz = unpackXYZTFVec(ivector, ret[r][c], new AddressImm(new GenericAddress(lBase, GaugeType), lpackoffset),
+		new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir);
+	rpackoffset += rsz;
+	if(rsz == VECLEN) lpackoffset += rsz;
+    }
+}
+
+void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& lBase, const string& rBase, const string& dir, bool compress12)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    if(compress12) forLoopStatement(ivector, "int r=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "r<2", "++r");
+    else forLoopStatement(ivector, "int r=0, lpackoffset = 0, rpackoffset = 0", "r<3", "++r");
+    forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+    {
+	unpackXYZTFVec(ivector, ret+"[r][c]", new AddressImmStr(new GenericAddress(lBase, GaugeType), "lpackoffset"),
+		new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
+	//if(rsz==VECLEN) lpackoffset+=VECLEN;
+	ifStatement(ivector, "rsz==VECLEN");
+	{
+		initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
+	}
+	endScope(ivector);
+    }
+    endScope(ivector);
+    endScope(ivector);
+}
+
+void UnpackGaugeDir(InstVector& ivector, const string& ret, const string& rBase, const string& dir, bool compress12)
+{
+    if(compress12) forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<2", "++r");
+    else forLoopStatement(ivector, "int r=0, rpackoffset = 0", "r<3", "++r");
+    forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+    {
+	unpackXYZTFVec(ivector, ret+"[r][c]", new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
+    }
+    endScope(ivector);
+    endScope(ivector);
+}
+
+#if 0
+void PackHermit7WayDir(InstVector& ivector, const FVec *ret[3][2], const string& lBase, const string& rBase, int dirl, int dirr, bool compress12)
+{
+    int lunpackoffset = 0, runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {
+        int rsz = unpackXYZTFVec(ivector, ret[d*(3-compress12)+r][c], new AddressImm(new GenericAddress(lBase, GaugeType), lunpackoffset),
+                new AddressImm(new GenericAddress(rBase, GaugeType), runpackoffset), dir);
+        runpackoffset += rsz;
+        if(rsz == VECLEN) lunpackoffset += rsz;
+    }
+}
+
+void PackGauge7WayDir(InstVector& ivector, string ret, const string& rBase, string dir, bool compress12)
+{
+    int rpackoffset = 0;
+    for(int d=0; d<7; ++d)
+    for(int c1=0; c1<3-compress12; ++c1) for(int c2=0; c2<3; ++c2)
+    {
+	ostringstream tmp;
+	tmp << "[" << d << "][" << c1 << "][" << c2 << "]";
+        int rsz = packXYZTFVec(ivector, ret+tmp.str(), /*new AddressImm(new GenericAddress(lBase, GaugeType), lpackoffset),*/
+                new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir); 
+	rpackoffset += rsz;
+    }
+}
+
+void PackGauge7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir, bool compress12)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {        
+	ostringstream tmp;
+	tmp << "[" << d << "][" << r << "][" << c << "]";
+	int rsz = packXYZTFVec(ivector, ret+tmp.str(), new AddressImm(new GenericAddress(lBase, GaugeType), lpackoffset),
+                new AddressImm(new GenericAddress(rBase, GaugeType), rpackoffset), dir);
+        rpackoffset += rsz;
+        if(rsz == VECLEN) lpackoffset += rsz;
+    }
+}
+#endif
+
+void UnpackGauge7WayDir(InstVector& ivector, const FVec *ret[3][2], /*const string& lBase,*/ const string& rBase, int dir, bool compress12)
+{
+    int runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {
+	int rsz = unpackXYZTFVec(ivector, ret[d*(3-compress12)+r][c], /*new AddressImm(new GenericAddress(lBase, GaugeType), lunpackoffset),*/
+                new AddressImm(new GenericAddress(rBase, GaugeType), runpackoffset), dir);
+        runpackoffset += rsz;
+    }
+}
+
+void UnpackGauge7WayDir(InstVector& ivector, const FVec *ret[3][2], const string& lBase, const string& rBase, int dir, bool compress12)
+{
+    int lunpackoffset = 0, runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {
+        int rsz = unpackXYZTFVec(ivector, ret[d*(3-compress12)+r][c], new AddressImm(new GenericAddress(lBase, GaugeType), lunpackoffset),
+		new AddressImm(new GenericAddress(rBase, GaugeType), runpackoffset), dir);
+        runpackoffset += rsz;
+        if(rsz == VECLEN) lunpackoffset += rsz;
+    }
+}
+
+void UnpackGauge7WayDir(InstVector& ivector, const string ret, const string& lBase, const string& rBase, string dir, bool compress12)
+{
+    forLoopStatement(ivector, "int d=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "d<7", "++d");
+    {
+        if(compress12) forLoopInc(ivector, "r", "0", "2");
+	else forLoopInc(ivector, "r", "0", "3");
+        {
+            forLoopStatement(ivector, "int c=0", "c<3", "++c, rpackoffset += rsz");
+            {
+                unpackXYZTFVec(ivector, ret+"[d][r][c]", new AddressImmStr(new GenericAddress(lBase, GaugeType), "lpackoffset"), new AddressImmStr(new GenericAddress(rBase, GaugeType), "rpackoffset"), dir, "rsz");
+                ifStatement(ivector, "rsz == VECLEN");
+                {
+                    initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
+                }
+                endScope(ivector);
+            }
+            endScope(ivector);
+        }
+        endScope(ivector);
+    }
+    endScope(ivector);
+}
+
+#if 0
+void UnpackGauge7WayDir(InstVector& ivector, string ret, /*const string& lBase,*/ const string& rBase, string dir, bool compress12)
+{
+    int runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {
+	ostringstream tmp;
+        tmp << "[" << d << "][" << r << "][" << c << "]";
+        int rsz = unpackXYZTFVec(ivector, ret+tmp.str(), /*new AddressImm(new GenericAddress(lBase, GaugeType), lunpackoffset),*/
+                new AddressImm(new GenericAddress(rBase, GaugeType), runpackoffset), dir);
+        runpackoffset += rsz;
+    }
+}
+
+void UnpackGauge7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir, bool compress12)
+{
+    int lunpackoffset = 0, runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<3-compress12; r++) for(int c=0; c<3; ++c)
+    {
+        ostringstream tmp;
+	tmp << "[" << d << "][" << r << "][" << c << "]";
+	int rsz = unpackXYZTFVec(ivector, ret+tmp.str(), new AddressImm(new GenericAddress(lBase, GaugeType), lunpackoffset),
+                new AddressImm(new GenericAddress(rBase, GaugeType), runpackoffset), dir);
+        runpackoffset += rsz;
+        if(rsz == VECLEN) lunpackoffset += rsz;
+    }
+}
+#endif
+
+void PackHermit7WayDir(InstVector& ivector, const FVec *ret[9], const string& lBase, const string& rBase, int dir)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<4; r++)
+    {
+        int rsz = packXYZTFVec(ivector, ret[d]+2*r, new AddressImm(new GenericAddress(lBase, HermitType), lpackoffset),
+		new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+        rpackoffset += rsz;
+	if(rsz == VECLEN) lpackoffset += rsz;
+    }
+}
+
+void PackHermitDir(InstVector& ivector, const FVec ret[9], const string& lBase, const string& rBase, int dir)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    for(int r=0; r<4; r++)
+    {
+	int rsz = packXYZTFVec(ivector, ret+2*r, new AddressImm(new GenericAddress(lBase, HermitType), lpackoffset),
+		new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+	rpackoffset += rsz;
+	if(rsz == VECLEN) lpackoffset += rsz;
+    }
+}
+
+void PackHermitDir(InstVector& ivector, const FVec ret[9], const string& rBase, int dir)
+{
+    int rpackoffset = 0;
+    for(int r=0; r<4; r++)
+    {
+        int rsz = packXYZTFVec(ivector, ret+2*r, new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+	rpackoffset += rsz;
+    }
+}
+
+void PackHermitDir(InstVector& ivector, const string& ret, const string& lBase, const string& rBase, const string& dir)
+{
+/*
+    forLoopStatement(ivector, "int r=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "r<4", "++r, rpackoffset += rsz");
+    {
+	int rsz = packXYZTFVec(ivector, ret+"+2*r", new AddressImm(new GenericAddress(lBase, HermitType), lpackoffset),
+		new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+	if(rsz==VECLEN) initInt(ivector, "rsz", "VECLEN");
+	else initInt(ivector, "rsz", "2*VECLEN");
+	if(rsz == VECLEN) initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
+    }
+    endScope(ivector);
+*/
+    //int lpackoffset = 0, rpackoffset = 0;
+    //for(int r=0; r<4; r++)
+    forLoopStatement(ivector, "int r=0, rsz=0, lpackoffset = 0, rpackoffset = 0", "r<4", "++r, rpackoffset += rsz");
+    {
+	packXYZTFVec(ivector, "("+ret+"+2*r)", new AddressImmStr(new GenericAddress(lBase, HermitType), "lpackoffset"),
+		new AddressImmStr(new GenericAddress(rBase, HermitType), "rpackoffset"), dir, "rsz");
+	//rpackoffset += rsz;
+	ifStatement(ivector, "rsz == VECLEN");
+	{
+		initInt(ivector, "lpackoffset", "lpackoffset+rsz");
+	}
+	endScope(ivector);
+    }
+    endScope(ivector);
+}
+
+void PackHermitDir(InstVector& ivector, const string& ret, const string& rBase, const string& dir)
+{
+    forLoopStatement(ivector, "int r=0, rsz=0, rpackoffset = 0", "r<4", "++r, rpackoffset += rsz");
+    {
+	packXYZTFVec(ivector, "("+ret+"+2*r)", new AddressImmStr(new GenericAddress(rBase, HermitType), "rpackoffset"), dir, "rsz");
+    }
+    endScope(ivector);
+}
+
+void PackHermit7WayDir(InstVector& ivector, const FVec *ret[9], const string& rBase, int dir)
+{
+    int rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<4; r++)
+    {
+        int rsz = packXYZTFVec(ivector, ret[d]+2*r, new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+        rpackoffset += rsz;
+    }
+}
+
+void UnpackHermitDir(InstVector& ivector, const FVec ret[9], const string& rBase, int dir)
+{
+    int rpackoffset = 0;
+    for(int r=0; r<4; r++)
+    {
+	int rsz = unpackXYZTFVec(ivector, ret+2*r, new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+	rpackoffset += rsz;
+    }
+}
+
+void UnpackHermitDir(InstVector& ivector, const FVec ret[9], const string& lBase, const string& rBase, int dir)
+{
+    int rpackoffset = 0, lpackoffset = 0;
+    for(int r=0; r<4; r++)
+    {
+	int rsz = unpackXYZTFVec(ivector, ret+2*r, new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset),
+		new AddressImm(new GenericAddress(lBase, HermitType), lpackoffset), dir);
+	rpackoffset += rsz;
+	if(rsz==VECLEN) lpackoffset += rsz;
+    }
+}
+
+void UnpackHermitDir(InstVector& ivector, string ret, const string& rBase, string dir)
+{
+    int rpackoffset = 0;
+    //for(int r=0; r<4; r++)
+    forLoopStatement(ivector, "int r=0, rpackoffset=0, rsz=0", "r<4", "++r, rpackoffset += rsz");
+    {
+	/*std::stringstream Str;
+	Str << (2*r);
+	string r2 = Str.str();
+	*/
+	unpackXYZTFVec(ivector, "("+ret+"+2*r)", new AddressImmStr(new GenericAddress(rBase, HermitType), "rpackoffset"), dir, "rsz");
+	//rpackoffset += rsz;
+    }
+    endScope(ivector);
+}
+
+void UnpackHermitDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir)
+{
+    int rpackoffset = 0, lpackoffset = 0;
+    //for(int r=0; r<4; r++)
+    forLoopStatement(ivector, "int r=0, rpackoffset=0, lpackoffset=0, rsz=0", "r<4", "++r, rpackoffset += rsz");
+    {
+	/*std::stringstream Str;
+        Str << (2*r);
+        string r2 = Str.str();
+	*/
+	unpackXYZTFVec(ivector, "("+ret+"+2*r)", new AddressImmStr(new GenericAddress(rBase, HermitType), "rpackoffset"),
+                new AddressImmStr(new GenericAddress(lBase, HermitType), "lpackoffset"), dir, "rsz");
+        //rpackoffset += rsz;
+        //if(rsz==VECLEN) lpackoffset += rsz;
+        ifStatement(ivector, "rsz==VECLEN");
+	{
+		initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
 	}
 }
 
