@@ -4,7 +4,7 @@
 
 using namespace std;
 
-enum AddressType { GAUGE, SPINOR, KS, CLOVER_DIAG, CLOVER_OFFDIAG, ADDRESS_OF_SCALAR, GENERIC_ADDRESS};
+enum AddressType { GAUGE, HERMIT, HERMITHELPER, SPINOR, KS, CLOVER_DIAG, CLOVER_OFFDIAG, ADDRESS_OF_SCALAR, GENERIC_ADDRESS};
 
 class Address
 {
@@ -84,6 +84,123 @@ protected:
     const int c1;
     const int c2;
     const int reim;
+
+};
+
+class GaugeAddressStr : public Address
+{
+public:
+    GaugeAddressStr(const string& base_, const string& dir_, const string& c1_, const string& c2_, int reim_, int isHalfType) : Address(isHalfType), base(base_), dir(dir_), c1(c1_), c2(c2_), reim(reim_) {};
+
+    string serialize(void) const
+    {
+        ostringstream outbuf;
+        outbuf<< "(*" << base << ")[" << dir << "][" << c1 << "][" << c2 << "][" << reim << "]";
+
+        return outbuf.str();
+    }
+    AddressType getType(void) const
+    {
+        return GAUGE;
+    }
+protected:
+    const string base;
+    const string dir;
+    const string c1;
+    const string c2;
+    const int reim;
+};
+
+class HermitAddress : public Address
+{
+public:
+    HermitAddress(const string& base_, int dir_, int k_, int isHalfType) : Address(isHalfType), base(base_), dir(dir_), k(k_) {};
+
+    string serialize(void) const
+    {
+        ostringstream outbuf;
+        outbuf<< "(*" << base << ")[" << dir <<"]["<< k << "]";
+
+	return outbuf.str();
+    }
+    AddressType getType(void) const
+    {
+        return HERMIT;
+    }
+protected:
+    const string base;
+    const int dir;
+    const int k;
+
+};
+
+class HermitAddressStr : public Address
+{
+public:
+    HermitAddressStr(const string& base_, const string& dir_, const string& k_, int isHalfType) : Address(isHalfType), base(base_), dir(dir_), k(k_) {};
+
+    string serialize(void) const
+    {
+        ostringstream outbuf;
+        outbuf<< "(*" << base << ")[" << dir <<"]["<< k << "]";
+
+        return outbuf.str();
+    }
+    AddressType getType(void) const
+    {
+        return HERMIT;
+    }
+protected:
+    const string base;
+    const string dir;
+    const string k;
+};
+
+class HermitHelperAddress : public Address
+{
+public:
+  HermitHelperAddress(const string& base_, int dir1_, int dir2_, int k_, int isHalfType) : Address(isHalfType), base(base_), dir1(dir1_), dir2(dir2_), k(k_) {};
+
+    string serialize(void) const
+    {
+        ostringstream outbuf;
+        outbuf<< "(*" << base << ")[" << dir1 << "][" << dir2 << "]["<< k << "]";
+
+        return outbuf.str();
+    }
+    AddressType getType(void) const
+    {
+        return HERMITHELPER;
+    }
+protected:
+    const string base;
+    const int dir1;
+    const int dir2;
+    const int k;
+
+};
+
+class HermitHelperAddressStr : public Address
+{
+public:
+  HermitHelperAddressStr(const string& base_, const string& dir1_, const string& dir2_, const string& k_, int isHalfType) : Address(isHalfType), base(base_), dir1(dir1_), dir2(dir2_), k(k_) {};
+
+    string serialize(void) const
+    {
+        ostringstream outbuf;
+        outbuf<< "(*" << base << ")[" << dir1 << "][" << dir2 << "]["<< k << "]";
+
+        return outbuf.str();
+    }
+    AddressType getType(void) const
+    {
+        return HERMITHELPER;
+    }
+protected:
+    const string base;
+    const string dir1;
+    const string dir2;
+    const string k;
 
 };
 
@@ -228,6 +345,25 @@ public:
 protected:
     const Address* base;
     const int imm;
+};
+
+class AddressImmStr : public Address
+{
+public:
+    AddressImmStr(const Address* base_, string imm_) : Address(base_->isHalfType()), base(base_), imm(imm_) {}
+    string serialize() const
+    {
+        ostringstream outbuf;
+        outbuf << "(" << base->serialize() << "+" << imm << ")";
+        return outbuf.str();
+    }
+    AddressType getType(void) const
+    {
+        return base->getType();
+    }
+protected:
+    const Address* base;
+    const string imm;
 };
 
 class IndirectAddress : public Address

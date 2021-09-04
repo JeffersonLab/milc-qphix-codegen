@@ -20,8 +20,8 @@ Available targets are:
 
  mic - Xeon Phi
  avx - Regular AVX 
- avx2 - AVX2 (e.g. for Haswell) -- tested for KS CG (dslash branch)
- avx512 - AVX512 (e.g. for KNL) -- tested for KS CG and GF (gauge_force branch)
+ avx2 - AVX2 (e.g. for Haswell) -- untested
+ avx512 - AVX512 (e.g. for KNL) -- untested
  sse  - For SSE -- untested
  scalar -- C, scalar code (SOALEN=1)
 
@@ -112,10 +112,10 @@ b) The generators for the Kernels:
 
   
    dslash_common.h  -- defines the prototypes for commonly used helper functions like complex arithmetic and declaring data types
-   dslash_common.cc -- implements the prototypes from dslash_common.h
+   dslash_common.h -- implements the prototypes from dslash_common.h
    dslash.cc -- implements the main kernels for wilson dslash using dslash_common.h
-   ks_dslash_xyzt.cc -- implements the main kernels for KS dslash using dslash_common.h
-   gf_imp_xyzt.cc -- implements the main kernels for GF using gf_imp_xyzt.h (gauge_force branch)
+   ks_dslash.cc -- implements the main kernels for KS dslash using dslash_common.h
+
 
 The various code-generation options in the inst_xx_vecX.cc files, the headers etc are controlled by compiler
 #defines defined in the Makefiles, and customMake.target files.

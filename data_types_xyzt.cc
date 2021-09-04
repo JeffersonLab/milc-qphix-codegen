@@ -1,5 +1,5 @@
 
-#include "data_types.h"
+#include "data_types_xyzt.h"
 #include "instructions.h"
 
 #if 0
@@ -37,6 +37,71 @@ void writeFVecKS(InstVector& ivector, const FVec& ret, const string& base, int c
 void readFVecGauge(InstVector& ivector, const FVec& ret, const string& base, int dir, int c1, int c2, int reim)
 {
     loadFVec(ivector, ret, new GaugeAddress(base,dir,c1,c2,reim,GaugeType), string(""));
+}
+
+void readFVecGauge(InstVector& ivector, const FVec& ret, const string& base, const string& dir, const string& c1, const string& c2, int reim)
+{
+    loadFVec(ivector, ret, new GaugeAddressStr(base,dir,c1,c2,reim,GaugeType), string(""));
+}
+
+void writeFVecGauge(InstVector& ivector, const FVec& ret, const string& base, int dir, int c1, int c2, int reim, int isStreaming)
+{
+    storeFVec(ivector, ret, new GaugeAddress(base,dir,c1,c2,reim,GaugeType), isStreaming);
+}
+
+void writeFVecGauge(InstVector& ivector, const FVec& ret, const string& base, const string& dir, const string& c1, const string& c2, int reim, int isStreaming)
+{
+    storeFVec(ivector, ret, new GaugeAddressStr(base,dir,c1,c2,reim,GaugeType), isStreaming);
+}
+
+void readFVecHermit(InstVector& ivector, const FVec& ret, const string& base, int dir, int k, const string& mask="")
+{
+    loadFVec(ivector, ret, new HermitAddress(base,dir,k,HermitType), mask);
+}
+
+void readFVecHermit(InstVector& ivector, const FVec& ret, const string& base, const string& dir, const string& k, const string& mask="")
+{
+    loadFVec(ivector, ret, new HermitAddressStr(base,dir,k,HermitType), mask);
+}
+
+void readFVecHermitHelper(InstVector& ivector, const FVec& ret, const string& base, int dir1, int dir2, int k)
+{
+    loadFVec(ivector, ret, new HermitHelperAddress(base,dir1,dir2,k,HermitHelperType), string(""));
+}
+
+void readFVecHermitHelper(InstVector& ivector, const FVec& ret, const string& base, const string& dir1, const string& dir2, const string& k)
+{
+    loadFVec(ivector, ret, new HermitHelperAddressStr(base,dir1,dir2,k,HermitHelperType), string(""));
+}
+
+void writeFVecHermit(InstVector& ivector, const FVec& ret, const string& base, int dir, int k, int isStreaming)
+{
+    storeFVec(ivector, ret, new HermitAddress(base,dir,k,HermitType), isStreaming);
+}
+
+void writeFVecHermit(InstVector& ivector, const FVec& ret, const string& base, const string& dir, const string& k, int isStreaming)
+{
+    storeFVec(ivector, ret, new HermitAddressStr(base,dir,k,HermitType), isStreaming);
+}
+
+void writeFVecHermit(InstVector& ivector, const FVec& ret, const string& base, int dir, int k, string mask)
+{
+    storeFVec(ivector, ret, new HermitAddress(base,dir,k,HermitType), mask);
+}
+
+void writeFVecHermit(InstVector& ivector, const FVec& ret, const string& base, const string& dir, const string& k, string mask)
+{
+    storeFVec(ivector, ret, new HermitAddressStr(base,dir,k,HermitType), mask);
+}
+
+void writeFVecHermitHelper(InstVector& ivector, const FVec& ret, const string& base, int dir1, int dir2, int k, int isStreaming)
+{
+    storeFVec(ivector, ret, new HermitHelperAddress(base,dir1,dir2,k,HermitHelperType), isStreaming);
+}
+
+void writeFVecHermitHelper(InstVector& ivector, const FVec& ret, const string& base, const string& dir1, const string& dir2, const string& k, int isStreaming)
+{
+    storeFVec(ivector, ret, new HermitHelperAddressStr(base,dir1,dir2,k,HermitHelperType), isStreaming);
 }
 
 void readFVecClovDiag(InstVector& ivector, const FVec& ret, const string& base, int block, int c)
@@ -126,6 +191,175 @@ void LoadFullGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string
     }
 }
 
+void LoadFullGaugeDir(InstVector& ivector, string ret, const string& base, string dir, bool compress12)
+{
+    if(compress12 == true) forLoopInc(ivector, "c1", "0", "2");
+    else forLoopInc(ivector, "c1", "0", "3");
+    {
+        forLoopInc(ivector, "c2", "0", "3");
+	{
+	    readFVecGauge(ivector, FVec(ret+"[c1][c2][0]"), base, dir, "c1", "c2", RE);
+	    readFVecGauge(ivector, FVec(ret+"[c1][c2][1]"), base, dir, "c1", "c2", IM);
+	}
+	endScope(ivector);
+    }
+    endScope(ivector);
+}
+
+void StoreFullGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& base, int dir, bool compress12, int isStreaming)
+{
+#ifndef ENABLE_STREAMING_STORES
+    isStreaming = 0;
+#endif
+    int nrows = 3;
+    if(compress12 == true) {
+        nrows = 2;
+    }
+    for(int c1=0; c1 < nrows; c1++) 
+        for(int c2=0; c2 < 3; c2++) {
+        writeFVecGauge(ivector, ret[c1][c2][RE], base, dir, c1, c2, RE, isStreaming);
+        writeFVecGauge(ivector, ret[c1][c2][IM], base, dir, c1, c2, IM, isStreaming);
+    }
+}
+
+void StoreFullGaugeDir(InstVector& ivector, string ret, const string& base, string dir, bool compress12, int isStreaming)
+{
+#ifndef ENABLE_STREAMING_STORES
+    isStreaming = 0;
+#endif
+    if(compress12 == true) forLoopInc(ivector, "c1", "0", "2");
+    else forLoopInc(ivector, "c1", "0", "3");
+    {
+        forLoopInc(ivector, "c2", "0", "3");
+        {
+	    writeFVecGauge(ivector, FVec(ret+"[c1][c2][0]"), base, dir, "c1", "c2", RE, isStreaming);
+	    writeFVecGauge(ivector, FVec(ret+"[c1][c2][1]"), base, dir, "c1", "c2", IM, isStreaming);
+	}
+	endScope(ivector);
+    }
+    endScope(ivector);
+}
+
+void StreamFullGaugeDir(InstVector& ivector, const FVec ret[3][3][2], const string& base, int dir, bool compress12)
+{
+    StoreFullGaugeDir(ivector, ret, base, dir, compress12, 1);
+}
+
+void StreamFullGaugeDir(InstVector& ivector, string ret, const string& base, string dir, bool compress12)
+{
+    StoreFullGaugeDir(ivector, ret, base, dir, compress12, 1);
+}
+
+void LoadFullHermitDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir, const string& mask="")
+{
+    for(int k=0; k<HERM_ELEM; ++k)
+	readFVecHermit(ivector, ret[k], base, dir, k, mask);
+}
+
+void LoadFullHermitDir(InstVector& ivector, string ret, const string& base, string dir, const string& mask="")
+{
+    forLoopInc(ivector, "k", "0", "8");
+    {
+	readFVecHermit(ivector, FVec(ret+"[k]"), base, dir, "k", mask);
+    }
+    endScope(ivector);
+}
+
+void StoreFullHermitDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir, int isStreaming)
+{
+#ifndef ENABLE_STREAMING_STORES
+    isStreaming = 0;
+#endif
+    for(int col=0; col < HERM_ELEM; col++) {
+        writeFVecHermit(ivector, ret[col], base, dir, col, isStreaming);
+    }
+}
+
+void StoreFullHermitDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir, string mask)
+{
+    for(int col=0; col < HERM_ELEM; col++) {
+        writeFVecHermit(ivector, ret[col], base, dir, col, mask);
+    }
+}
+
+void StoreFullHermitDir(InstVector& ivector, string ret, const string& base, string dir, int isStreaming)
+{
+#ifndef ENABLE_STREAMING_STORES
+    isStreaming = 0;
+#endif
+    forLoopInc(ivector, "k", "0", "8");
+    {
+	writeFVecHermit(ivector, FVec(ret+"[k]"), base, dir, "k", isStreaming);
+    }
+    endScope(ivector);
+}
+
+void StoreFullHermitDir(InstVector& ivector, string ret, const string& base, string dir, string mask)
+{
+    forLoopInc(ivector, "k", "0", "8");
+    {
+        writeFVecHermit(ivector, FVec(ret+"[k]"), base, dir, "k", mask);
+    }
+    endScope(ivector);
+}
+
+void StreamFullHermitDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir)
+{
+    StoreFullHermitDir(ivector, ret, base, dir, 1);
+}
+
+void StreamFullHermitDir(InstVector& ivector, string ret, const string& base, string dir)
+{
+    StoreFullHermitDir(ivector, ret, base, dir, 1);
+}
+
+void LoadFullHermitHelperDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir1, int dir2)
+{
+    for(int k=0; k<HERM_ELEM; ++k)
+        readFVecHermitHelper(ivector, ret[k], base, dir1, dir2, k);
+}
+
+void LoadFullHermitHelperDir(InstVector& ivector, string ret, const string& base, string dir1, string dir2)
+{
+    forLoopInc(ivector, "k", "0", "8");
+    {
+	readFVecHermitHelper(ivector, FVec(ret+"[k]"), base, dir1, dir2, "k");
+    }
+    endScope(ivector);
+}
+
+void StoreFullHermitHelperDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir1, int dir2, int isStreaming)
+{
+#ifndef ENABLE_STREAMING_STORES
+    isStreaming = 0;
+#endif
+    for(int col=0; col < HERM_ELEM; col++) {
+	writeFVecHermitHelper(ivector, ret[col], base, dir1, dir2, col, isStreaming);
+    }
+}
+
+void StoreFullHermitHelperDir(InstVector& ivector, string ret, const string& base, string dir1, string dir2, int isStreaming)
+{
+#ifndef ENABLE_STREAMING_STORES
+    isStreaming = 0;
+#endif
+    forLoopInc(ivector, "k", "0", "8");
+    {
+	writeFVecHermitHelper(ivector, FVec(ret+"[k]"), base, dir1, dir2, "k", isStreaming);
+    }
+    endScope(ivector);
+}
+
+void StreamFullHermitHelperDir(InstVector& ivector, const FVec ret[HERM_ELEM], const string& base, int dir1, int dir2)
+{
+    StoreFullHermitHelperDir(ivector, ret, base, dir1, dir2, 1);
+}
+
+void StreamFullHermitHelperDir(InstVector& ivector, string ret, const string& base, string dir1, string dir2)
+{
+    StoreFullHermitHelperDir(ivector, ret, base, dir1, dir2, 1);
+}
+
 void LoadFullCloverBlock(InstVector& ivector, const FVec diag[6], const FVec off_diag[15][2], const string& base, int block)
 {
     for(int c=0; c < 6; c++) {
@@ -183,7 +417,7 @@ void PackKSSpinor(InstVector& ivector, const FVec ret[3][2], const string& lBase
 
 void UnpackKSSpinor(InstVector& ivector, const FVec ret[3][2], const string& lBase, const string& rBase, int dir)
 {
-	int lunpackoffset = 0, runpackoffset = 0;
+    int lunpackoffset = 0, runpackoffset = 0;
     for(int col=0; col < 3; col++) {
 		int rsz = unpackXYZTFVec(ivector, ret[col], new AddressImm(new GenericAddress(lBase, SpinorType), lunpackoffset),
 			new AddressImm(new GenericAddress(rBase, SpinorType), runpackoffset), dir);
@@ -562,8 +796,88 @@ void UnpackHermitDir(InstVector& ivector, string ret, const string& lBase, const
 	{
 		initInt(ivector, "lpackoffset", "lpackoffset+VECLEN");
 	}
+	endScope(ivector);
+    }
+    endScope(ivector);
 }
 
+#if 0
+void PackHermit7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir)
+{
+    int lpackoffset = 0, rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<4; r++)
+    {
+	ostringstream tmp;
+        tmp << "[" << d << "][" << 2*r << "]";
+        int rsz = packXYZTFVec(ivector, "((vector *)&"+ret+tmp.str()+")", new AddressImm(new GenericAddress(lBase, HermitType), lpackoffset),
+                new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+        rpackoffset += rsz;
+        if(rsz == VECLEN) lpackoffset += rsz;
+    }
+}
+
+void PackHermit7WayDir(InstVector& ivector, string ret, const string& rBase, string dir)
+{
+    int rpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int r=0; r<4; r++)
+    {
+	ostringstream tmp;
+	tmp << "[" << d << "][" << 2*r << "]";
+        int rsz = packXYZTFVec(ivector, "((vector *)&"+ret+tmp.str()+")", new AddressImm(new GenericAddress(rBase, HermitType), rpackoffset), dir);
+        rpackoffset += rsz;
+    }
+}
+#endif
+
+void UnpackHermit7WayDir(InstVector& ivector, const FVec *ret[9], const string& lBase, const string& rBase, int dir)
+{
+    int lunpackoffset = 0, runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int k=0; k<4; ++k)
+    {
+	int rsz = unpackXYZTFVec(ivector, ret[d]+2*k, new AddressImm(new GenericAddress(lBase, HermitType), lunpackoffset),
+		new AddressImm(new GenericAddress(rBase, HermitType), runpackoffset), dir);
+	runpackoffset += rsz;
+	if(rsz == VECLEN) lunpackoffset += rsz;
+    }
+}
+
+void UnpackHermit7WayDir(InstVector& ivector, const FVec *ret[9], const string& rBase, int dir)
+{
+    int runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int k=0; k<4; ++k)
+    {
+	int rsz = unpackXYZTFVec(ivector, ret[d]+2*k, new AddressImm(new GenericAddress(rBase, HermitType), runpackoffset), dir);
+	runpackoffset += rsz;
+    }
+}
+
+#if 0
+void UnpackHermit7WayDir(InstVector& ivector, string ret, const string& lBase, const string& rBase, string dir)
+{
+    int lunpackoffset = 0, runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int k=0; k<4; ++k)
+    {
+	ostringstream tmp;
+        tmp << "[" << d << "][" << 2*k << "]";
+        int rsz = unpackXYZTFVec(ivector, "((vector *)&"+ret+tmp.str()+")", new AddressImm(new GenericAddress(lBase, HermitType), lunpackoffset),
+                new AddressImm(new GenericAddress(rBase, HermitType), runpackoffset), dir);
+        runpackoffset += rsz;
+        if(rsz == VECLEN) lunpackoffset += rsz;
+    }
+}
+
+void UnpackHermit7WayDir(InstVector& ivector, string ret, const string& rBase, string dir)
+{
+    int runpackoffset = 0;
+    for(int d=0; d<7; ++d) for(int k=0; k<4; ++k)
+    {
+	ostringstream tmp;
+        tmp << "[" << d << "][" << 2*k << "]";
+        int rsz = unpackXYZTFVec(ivector, "((vector *)&"+ret+tmp.str()+")", new AddressImm(new GenericAddress(rBase, HermitType), runpackoffset), dir);
+        runpackoffset += rsz;
+    }
+}
+#endif
 
 // Prefetches
 
@@ -634,6 +948,34 @@ void prefetchL2GuageDirIn(InstVector& ivector, string base, int dir, const strin
 {
 #ifdef PREF_L2_GAUGE
     prefetchL2(ivector, new AddressImm(new AddressOffset(new GaugeAddress(base,dir,0,0,0,GaugeType), pref_dist), imm), type);
+#endif
+}
+
+void prefetchL1HermitDirIn(InstVector& ivector, string base, int dir, int imm, int type)
+{
+#ifdef PREF_L1_HERMIT
+    prefetchL1(ivector, new AddressImm(new HermitAddress(base,dir,0,HermitType), imm), type);
+#endif
+}
+
+void prefetchL2HermitDirIn(InstVector& ivector, string base, int dir, const string& pref_dist, int imm, int type)
+{
+#ifdef PREF_L2_HERMIT
+    prefetchL2(ivector, new AddressImm(new AddressOffset(new HermitAddress(base,dir,0,HermitType), pref_dist), imm), type);
+#endif
+}
+
+void prefetchL1HermitHelperDirIn(InstVector& ivector, string base, int dir1, int dir2, int imm, int type)
+{
+#ifdef PREF_L1_HERMIT
+    prefetchL1(ivector, new AddressImm(new HermitHelperAddress(base,dir1, dir2, 0,HermitHelperType), imm), type);
+#endif
+}
+
+void prefetchL2HermitHelperDirIn(InstVector& ivector, string base, int dir, const string& pref_dist, int imm, int type)
+{
+#ifdef PREF_L2_HERMIT
+    prefetchL2(ivector, new AddressImm(new AddressOffset(new HermitHelperAddress(base,dir,0,0,HermitHelperType), pref_dist), imm), type);
 #endif
 }
 
@@ -750,6 +1092,56 @@ void PrefetchL2FullGaugeIn(InstVector& ivector, const string& base, const string
     for(int dir = 0; dir < 8; dir++) {
         PrefetchL2FullGaugeDirIn(ivector, base, dir, pref_dist, compress12, type);
     }
+}
+
+void PrefetchL1FullHermitDirIn(InstVector& ivector, const string& base, int dir, int type)
+{
+    int nSites = VECLEN;
+    int h_size=HERM_ELEM;
+
+    for(int i = 0; i < ((h_size*nSites*sizeof(HermitBaseType)+63)/64); i++) {
+        prefetchL1HermitDirIn(ivector, base, dir, i*(64/sizeof(HermitBaseType)), type);
+    }
+}
+
+void PrefetchL2FullHermitDirIn(InstVector& ivector, const string& base, int dir, const string& pref_dist, int type)
+{
+    int nSites = VECLEN;
+    int h_size=HERM_ELEM;
+    for(int i = 0; i < ((h_size*nSites*sizeof(HermitBaseType)+63)/64); i++) {
+        prefetchL2HermitDirIn(ivector, base, dir, pref_dist, i*(64/sizeof(HermitBaseType)), type);
+    }
+}
+
+void PrefetchL2FullHermitIn(InstVector& ivector, const string& base, const string& pref_dist, int type)
+{
+    for(int dir = 0; dir < 8; dir++) 
+	PrefetchL2FullHermitDirIn(ivector, base, dir, pref_dist, type);
+}
+
+void PrefetchL1FullHermitHelperDirIn(InstVector& ivector, const string& base, int dir1, int dir2, int type)
+{
+    int nSites = VECLEN;
+    int h_size=HERM_ELEM;
+
+    for(int i = 0; i < ((h_size*nSites*sizeof(HermitBaseType)+63)/64); i++) {
+        prefetchL1HermitHelperDirIn(ivector, base, dir1, dir2, i*(64/sizeof(HermitBaseType)), type);
+    }
+}
+
+void PrefetchL2FullHermitHelperDirIn(InstVector& ivector, const string& base, int dir, const string& pref_dist, int type)
+{
+    int nSites = VECLEN;
+    int h_size=HERM_ELEM*7;
+    for(int i = 0; i < ((h_size*nSites*sizeof(HermitBaseType)+63)/64); i++) {
+        prefetchL2HermitHelperDirIn(ivector, base, dir, pref_dist, i*(64/sizeof(HermitHelperBaseType)), type);
+    }
+}
+
+void PrefetchL2FullHermitHelperIn(InstVector& ivector, const string& base, const string& pref_dist, int type)
+{
+    for(int dir = 0; dir < 8; dir++)
+	PrefetchL2FullHermitHelperDirIn(ivector, base, dir, pref_dist, type);
 }
 
 void PrefetchL1FullCloverBlockIn(InstVector& ivector, const string& base, int block)

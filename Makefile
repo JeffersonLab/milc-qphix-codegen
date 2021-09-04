@@ -1,7 +1,9 @@
 
+DRIVER=dslash_xyzt 
 milc=1
 ifeq ($(milc),1)
-DRIVER=ks_dslash_xyzt
+DRIVER_CG=ks_dslash_xyzt
+DRIVER_GF=gf_imp_xyzt
 endif
 
 mode=mic
@@ -98,13 +100,22 @@ deflist += PRECISION
 DEFS += $(strip $(foreach var, $(yesnolist), $(if $(filter 1, $($(var))), -D$(var))))
 DEFS += $(strip $(foreach var, $(deflist), $(if $($(var)), -D$(var)=$($(var)))))
 
-SOURCES = data_types_xyzt.cc $(DRIVER).cc dslash_common.cc inst_dp_vec8.cc inst_sp_vec16.cc inst_dp_vec4.cc inst_sp_vec8.cc inst_sp_vec4.cc inst_dp_vec2.cc inst_scalar.cc
-HEADERS = address_types.h  data_types_xyzt.h  dslash_common.h  instructions.h Makefile $(CONFFILE)
+SOURCES = data_types_xyzt.cc data_utils.cc complex.cc complex_str.cc mat_utils.cc mat_utils_str.cc dslash_common.cc inst_dp_vec8.cc inst_sp_vec16.cc inst_dp_vec4.cc inst_sp_vec8.cc inst_sp_vec4.cc inst_dp_vec2.cc inst_scalar.cc
 
-all: codegen
+SOURCES_CG = $(SOURCES) $(DRIVER_CG).cc
+SOURCES_GF = $(SOURCES) $(DRIVER_GF).cc staples.cc staples_str.cc
 
-codegen: $(SOURCES) $(HEADERS) 
-	$(CXXHOST) $(DEFS) $(SOURCES) -o ./codegen
+HEADERS_CG = address_types.h  data_types_xyzt.h  dslash_common.h  instructions.h data_utils.h complex.h mat_utils.h  Makefile $(CONFFILE)
+
+HEADERS_GF = $(HEADERS_CG) staples.h gf_imp_xyzt.h
+
+all: codegen_cg codegen_gf
+
+codegen_cg: $(SOURCES_CG) $(HEADERS_CG) 
+	$(CXXHOST) $(DEFS) $(SOURCES_CG) -o ./codegen_cg
+
+codegen_gf: $(SOURCES_GF) $(HEADERS_GF)
+	$(CXXHOST) $(DEFS) $(SOURCES_GF) -o ./codegen_gf
 
 .PHONY: cgen mic avx avx2 avx512 sse scalar
 
@@ -112,26 +123,26 @@ cgen: mic avx avx2 avx512 sse scalar
 
 mic:
 	mkdir -p ./mic
-	@make clean && make -f Makefile mode=mic PRECISION=2 && ./codegen
-	@make clean && make -f Makefile mode=mic PRECISION=1 && ./codegen
+	@make clean && make -f Makefile mode=mic PRECISION=2 && ./codegen_cg && ./codegen_gf
+	@make clean && make -f Makefile mode=mic PRECISION=1 && ./codegen_cg && ./codegen_gf
 #	@make clean && make -f Makefile mode=mic PRECISION=1 ENABLE_LOW_PRECISION=1 && ./codegen
 
 avx512:
 	mkdir -p ./avx512
-	@make clean && make -f Makefile mode=mic AVX512=1 PRECISION=2 && ./codegen
-	@make clean && make -f Makefile mode=mic AVX512=1 PRECISION=1 && ./codegen
+	@make clean && make -f Makefile mode=mic AVX512=1 PRECISION=2 && ./codegen_cg && ./codegen_gf
+	@make clean && make -f Makefile mode=mic AVX512=1 PRECISION=1 && ./codegen_cg && ./codegen_gf
 #	@make clean && make -f Makefile mode=mic AVX512=1 PRECISION=1 ENABLE_LOW_PRECISION=1 && ./codegen
 
 
 avx:
 	mkdir -p ./avx
-	@make clean && make -f Makefile mode=avx PRECISION=2 && ./codegen
-	@make clean && make -f Makefile mode=avx PRECISION=1 && ./codegen
+	@make clean && make -f Makefile mode=avx PRECISION=2 && ./codegen_cg && ./codegen_gf
+	@make clean && make -f Makefile mode=avx PRECISION=1 && ./codegen_cg && ./codegen_gf
 
 avx2:
 	mkdir -p ./avx2
-	@make clean && make -f Makefile mode=avx PRECISION=2 AVX2=1 && ./codegen
-	@make clean && make -f Makefile mode=avx PRECISION=1 AVX2=1 && ./codegen
+	@make clean && make -f Makefile mode=avx PRECISION=2 AVX2=1 && ./codegen_cg && ./codegen_gf
+	@make clean && make -f Makefile mode=avx PRECISION=1 AVX2=1 && ./codegen_cg && ./codegen_gf
 #	@make clean && make -f Makefile mode=avx PRECISION=1 AVX2=1 ENABLE_LOW_PRECISION=1 && ./codegen
 
 sse:
@@ -141,14 +152,14 @@ sse:
 
 scalar:
 	mkdir -p ./scalar
-	@make clean && make mode=scalar PRECISION=2 && ./codegen
-	@make clean && make mode=scalar PRECISION=1 && ./codegen
+	@make clean && make mode=scalar PRECISION=2 && ./codegen_cg && ./codegen_gf
+	@make clean && make mode=scalar PRECISION=1 && ./codegen_cg && ./codegen_gf
 
 clean: 
-	rm -rf *.o ./codegen 
+	rm -rf *.o ./codegen*
 
 cleanall: 
-	rm -rf *.o ./codegen
+	rm -rf *.o ./codegen*
 	rm -rf ./avx 
 	rm -rf ./avx2
 	rm -rf ./avx512
