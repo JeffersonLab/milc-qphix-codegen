@@ -12,18 +12,21 @@ This is research software and while every effort has been made to ensure it perf
 3) Building the Code
 ====================
  i) Edit the Makefile
- ii) Replace the first line ('mode') to whichever target you are trying to generate code-for. e.g. for MIC set 
-
-mode=mic
+ ii) Replace the first line ('mode') to whichever architecture you are trying to generate code for, 
+     mode = 
+         mic : KNC, KNL
+         avx : Regular AVX, Haswell, Broadwell
+         sse : SSE
+         scalar : Scalar code
 
 Available targets are:
 
- mic - Xeon Phi
+ mic - Xeon Phi KNC
  avx - Regular AVX 
- avx2 - AVX2 (e.g. for Haswell) -- untested
- avx512 - AVX512 (e.g. for KNL) -- untested
+ avx2 - AVX2 (e.g. for Haswell)
+ avx512 - AVX512 (e.g. for KNL)
  sse  - For SSE -- untested
- scalar -- C, scalar code (SOALEN=1)
+ scalar -- C, scalar code (VECLEN=1)
 
 iii) Run the code with 'make <target>' this will build the code generator and generate the code for the target.  The target specific code, will be placed in the subdirectory corresponding to the target (ie MIC code goes to mic/ AVX code goes to avx/ etc).
 
